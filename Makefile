@@ -140,4 +140,4 @@ help:
 	@echo "  tag           Create a new version tag"
 	@echo ""
 	@echo "Install from GitHub (for users):"
-	@echo "  curl -fsSL https://raw.githubusercontent.com/unstablemind/pocket-agent-CLI/main/scripts/install.sh | bash"
+	@echo "  curl -fsSL https://raw.githubusercontent.com/KenKaiii/pocket-agent-cli/main/scripts/install.sh | bash"

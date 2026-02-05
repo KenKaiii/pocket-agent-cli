@@ -2,7 +2,7 @@
 set -e
 
 # Pocket CLI Local Installer (for development)
-# For production install, use: curl -fsSL https://raw.githubusercontent.com/unstablemind/pocket-agent-CLI/main/scripts/install.sh | bash
+# For production install, use: curl -fsSL https://raw.githubusercontent.com/KenKaiii/pocket-agent-cli/main/scripts/install.sh | bash
 
 INSTALL_DIR="$HOME/.local/bin"
 BINARY_NAME="pocket"

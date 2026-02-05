@@ -4,7 +4,7 @@ set -e
 # Pocket CLI Installer
 # Usage: curl -fsSL https://raw.githubusercontent.com/unstablemind/pocket-agent-CLI/main/scripts/install.sh | bash
 
-REPO="unstablemind/pocket-agent-CLI"
+REPO="KenKaiii/pocket-agent-cli"
 BINARY_NAME="pocket"
 INSTALL_DIR="$HOME/.local/bin"
 
