@@ -48,8 +48,10 @@ func NewRootCmd() *cobra.Command {
 func Execute() error {
 	root := NewRootCmd()
 	if err := root.Execute(); err != nil {
-		// Print error in JSON format for LLM consumption
-		output.PrintError("command_failed", err.Error(), nil)
+		// Only print if not already printed by the command
+		if !output.IsPrinted(err) {
+			output.PrintError("command_failed", err.Error(), nil)
+		}
 		return err
 	}
 	return nil

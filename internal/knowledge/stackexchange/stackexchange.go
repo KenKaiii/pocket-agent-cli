@@ -24,17 +24,17 @@ var (
 
 // Question is LLM-friendly question output
 type Question struct {
-	ID         int      `json:"id"`
-	Title      string   `json:"title"`
-	Score      int      `json:"score"`
-	Answers    int      `json:"answers"`
-	Accepted   bool     `json:"accepted"`
-	Views      int      `json:"views"`
-	Tags       []string `json:"tags,omitempty"`
-	Author     string   `json:"author"`
-	Age        string   `json:"age"`
-	URL        string   `json:"url"`
-	Body       string   `json:"body,omitempty"`
+	ID       int      `json:"id"`
+	Title    string   `json:"title"`
+	Score    int      `json:"score"`
+	Answers  int      `json:"answers"`
+	Accepted bool     `json:"accepted"`
+	Views    int      `json:"views"`
+	Tags     []string `json:"tags,omitempty"`
+	Author   string   `json:"author"`
+	Age      string   `json:"age"`
+	URL      string   `json:"url"`
+	Body     string   `json:"body,omitempty"`
 }
 
 // Answer is LLM-friendly answer output

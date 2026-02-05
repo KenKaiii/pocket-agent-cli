@@ -2,9 +2,9 @@ package commands
 
 import (
 	"github.com/spf13/cobra"
+	"github.com/unstablemind/pocket/internal/communication/discord"
 	"github.com/unstablemind/pocket/internal/communication/email"
 	"github.com/unstablemind/pocket/internal/communication/slack"
-	"github.com/unstablemind/pocket/internal/communication/discord"
 	"github.com/unstablemind/pocket/internal/communication/telegram"
 )
 

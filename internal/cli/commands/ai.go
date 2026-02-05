@@ -2,8 +2,8 @@ package commands
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/unstablemind/pocket/internal/ai/openai"
 	"github.com/unstablemind/pocket/internal/ai/anthropic"
+	"github.com/unstablemind/pocket/internal/ai/openai"
 )
 
 func NewAICmd() *cobra.Command {

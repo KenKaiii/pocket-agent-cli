@@ -31,15 +31,15 @@ type Repo struct {
 
 // Issue is LLM-friendly issue output
 type Issue struct {
-	Number  int      `json:"number"`
-	Title   string   `json:"title"`
-	State   string   `json:"state"`
-	Author  string   `json:"author"`
-	Labels  []string `json:"labels,omitempty"`
-	Age     string   `json:"age"`
-	URL     string   `json:"url"`
-	IsPR    bool     `json:"is_pr,omitempty"`
-	Body    string   `json:"body,omitempty"`
+	Number int      `json:"number"`
+	Title  string   `json:"title"`
+	State  string   `json:"state"`
+	Author string   `json:"author"`
+	Labels []string `json:"labels,omitempty"`
+	Age    string   `json:"age"`
+	URL    string   `json:"url"`
+	IsPR   bool     `json:"is_pr,omitempty"`
+	Body   string   `json:"body,omitempty"`
 }
 
 // PR is LLM-friendly PR output

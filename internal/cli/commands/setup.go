@@ -8,12 +8,12 @@ import (
 
 // ServiceInfo describes what's needed to set up a service
 type ServiceInfo struct {
-	Service     string   `json:"service"`
-	Name        string   `json:"name"`
-	Status      string   `json:"status"` // "ready", "missing", "partial"
+	Service     string    `json:"service"`
+	Name        string    `json:"name"`
+	Status      string    `json:"status"` // "ready", "missing", "partial"
 	Keys        []KeyInfo `json:"keys"`
-	SetupGuide  string   `json:"setup_guide"`
-	TestCommand string   `json:"test_cmd,omitempty"`
+	SetupGuide  string    `json:"setup_guide"`
+	TestCommand string    `json:"test_cmd,omitempty"`
 }
 
 // KeyInfo describes a single credential key
@@ -111,13 +111,34 @@ var services = map[string]ServiceInfo{
 		SetupGuide:  "1. Message @BotFather on Telegram\n2. Send /newbot and follow instructions\n3. Copy the token provided\n4. Run: pocket config set telegram_token <token>",
 		TestCommand: "pocket comms telegram chats",
 	},
-	"gmail": {
-		Service: "gmail",
-		Name:    "Gmail",
+	"email": {
+		Service: "email",
+		Name:    "Email (IMAP/SMTP)",
 		Keys: []KeyInfo{
-			{Key: "gmail_cred_path", Description: "Path to OAuth credentials JSON file", Required: true, Example: "~/.config/pocket/gmail_credentials.json"},
+			{Key: "email_address", Description: "Your email address", Required: true, Example: "you@gmail.com"},
+			{Key: "email_password", Description: "App password (not regular password)", Required: true, Example: "xxxx xxxx xxxx xxxx"},
+			{Key: "imap_server", Description: "IMAP server hostname", Required: true, Example: "imap.gmail.com"},
+			{Key: "smtp_server", Description: "SMTP server hostname", Required: true, Example: "smtp.gmail.com"},
+			{Key: "imap_port", Description: "IMAP port (default: 993)", Required: false, Example: "993"},
+			{Key: "smtp_port", Description: "SMTP port (default: 587)", Required: false, Example: "587"},
 		},
-		SetupGuide:  "1. Go to https://console.cloud.google.com/\n2. Create project, enable Gmail API\n3. Create OAuth 2.0 credentials (Desktop app)\n4. Download JSON file\n5. Run: pocket config set gmail_cred_path /path/to/credentials.json",
+		SetupGuide: `For Gmail:
+1. Enable 2-Factor Authentication at https://myaccount.google.com/security
+2. Go to https://myaccount.google.com/apppasswords
+3. Create an app password (select 'Mail' and your device)
+4. Run these commands:
+   pocket config set email_address your@gmail.com
+   pocket config set email_password "xxxx xxxx xxxx xxxx"
+   pocket config set imap_server imap.gmail.com
+   pocket config set smtp_server smtp.gmail.com
+
+For Outlook/Hotmail:
+   pocket config set imap_server outlook.office365.com
+   pocket config set smtp_server smtp.office365.com
+
+For Yahoo:
+   pocket config set imap_server imap.mail.yahoo.com
+   pocket config set smtp_server smtp.mail.yahoo.com`,
 		TestCommand: "pocket comms email list -l 1",
 	},
 	"google": {
@@ -192,6 +213,24 @@ var services = map[string]ServiceInfo{
 		},
 		SetupGuide:  "1. Go to your Mastodon instance's settings\n2. Development > New Application\n3. Create app with read/write scopes\n4. Copy the access token\n5. Run:\n   pocket config set mastodon_server <server>\n   pocket config set mastodon_token <token>",
 		TestCommand: "pocket social mastodon timeline -l 1",
+	},
+	"youtube": {
+		Service: "youtube",
+		Name:    "YouTube",
+		Keys: []KeyInfo{
+			{Key: "youtube_api_key", Description: "YouTube Data API v3 key", Required: true, Example: "AIzaSy..."},
+		},
+		SetupGuide: `1. Go to https://console.cloud.google.com/
+2. Create a new project (or select existing)
+3. Enable "YouTube Data API v3" at:
+   https://console.cloud.google.com/apis/library/youtube.googleapis.com
+4. Go to Credentials > Create Credentials > API Key
+5. (Optional) Restrict key to YouTube Data API v3
+6. Copy the API key
+7. Run: pocket config set youtube_api_key <your-api-key>
+
+Note: Free tier allows ~10,000 units/day (search=100, video=1, channel=1)`,
+		TestCommand: "pocket social youtube trending -l 1",
 	},
 }
 

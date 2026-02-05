@@ -8,9 +8,9 @@ import (
 
 func NewCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "todoist",
+		Use:     "todoist",
 		Aliases: []string{"todo"},
-		Short: "Todoist commands",
+		Short:   "Todoist commands",
 	}
 
 	cmd.AddCommand(newTasksCmd())

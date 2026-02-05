@@ -105,14 +105,14 @@ func newSummaryCmd() *cobra.Command {
 			title := args[0]
 
 			params := url.Values{
-				"action":        {"query"},
-				"titles":        {title},
-				"prop":          {"extracts"},
-				"exintro":       {"true"},
-				"explaintext":   {"true"},
-				"exsentences":   {fmt.Sprintf("%d", sentences)},
-				"redirects":     {"1"},
-				"format":        {"json"},
+				"action":      {"query"},
+				"titles":      {title},
+				"prop":        {"extracts"},
+				"exintro":     {"true"},
+				"explaintext": {"true"},
+				"exsentences": {fmt.Sprintf("%d", sentences)},
+				"redirects":   {"1"},
+				"format":      {"json"},
 			}
 
 			var resp struct {

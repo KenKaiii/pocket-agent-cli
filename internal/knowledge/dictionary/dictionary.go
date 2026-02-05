@@ -18,11 +18,11 @@ var client = &http.Client{Timeout: 10 * time.Second}
 
 // Definition is LLM-friendly definition output
 type Definition struct {
-	Word          string    `json:"word"`
-	Phonetic      string    `json:"phonetic,omitempty"`
-	Origin        string    `json:"origin,omitempty"`
-	Meanings      []Meaning `json:"meanings"`
-	AudioURL      string    `json:"audio,omitempty"`
+	Word     string    `json:"word"`
+	Phonetic string    `json:"phonetic,omitempty"`
+	Origin   string    `json:"origin,omitempty"`
+	Meanings []Meaning `json:"meanings"`
+	AudioURL string    `json:"audio,omitempty"`
 }
 
 // Meaning groups definitions by part of speech

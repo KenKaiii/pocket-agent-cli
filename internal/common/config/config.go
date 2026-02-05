@@ -26,12 +26,20 @@ type Config struct {
 	RedditClientSecret  string `json:"reddit_client_secret,omitempty"`
 	MastodonServer      string `json:"mastodon_server,omitempty"`
 	MastodonToken       string `json:"mastodon_token,omitempty"`
+	YouTubeAPIKey       string `json:"youtube_api_key,omitempty"`
 
 	// Communication
 	SlackToken    string `json:"slack_token,omitempty"`
 	DiscordToken  string `json:"discord_token,omitempty"`
 	TelegramToken string `json:"telegram_token,omitempty"`
-	GmailCredPath string `json:"gmail_cred_path,omitempty"`
+
+	// Email (IMAP/SMTP)
+	EmailAddress  string `json:"email_address,omitempty"`
+	EmailPassword string `json:"email_password,omitempty"`
+	IMAPServer    string `json:"imap_server,omitempty"`
+	IMAPPort      string `json:"imap_port,omitempty"`
+	SMTPServer    string `json:"smtp_server,omitempty"`
+	SMTPPort      string `json:"smtp_port,omitempty"`
 
 	// Dev
 	GitHubToken string `json:"github_token,omitempty"`
@@ -39,8 +47,8 @@ type Config struct {
 	LinearToken string `json:"linear_token,omitempty"`
 
 	// Productivity
-	NotionToken   string `json:"notion_token,omitempty"`
-	TodoistToken  string `json:"todoist_token,omitempty"`
+	NotionToken    string `json:"notion_token,omitempty"`
+	TodoistToken   string `json:"todoist_token,omitempty"`
 	GoogleCredPath string `json:"google_cred_path,omitempty"`
 
 	// News
@@ -137,14 +145,26 @@ func Set(key, value string) error {
 		cfg.MastodonServer = value
 	case "mastodon_token":
 		cfg.MastodonToken = value
+	case "youtube_api_key":
+		cfg.YouTubeAPIKey = value
 	case "slack_token":
 		cfg.SlackToken = value
 	case "discord_token":
 		cfg.DiscordToken = value
 	case "telegram_token":
 		cfg.TelegramToken = value
-	case "gmail_cred_path":
-		cfg.GmailCredPath = value
+	case "email_address":
+		cfg.EmailAddress = value
+	case "email_password":
+		cfg.EmailPassword = value
+	case "imap_server":
+		cfg.IMAPServer = value
+	case "imap_port":
+		cfg.IMAPPort = value
+	case "smtp_server":
+		cfg.SMTPServer = value
+	case "smtp_port":
+		cfg.SMTPPort = value
 	case "github_token":
 		cfg.GitHubToken = value
 	case "gitlab_token":
@@ -196,14 +216,26 @@ func Get(key string) (string, error) {
 		return cfg.MastodonServer, nil
 	case "mastodon_token":
 		return cfg.MastodonToken, nil
+	case "youtube_api_key":
+		return cfg.YouTubeAPIKey, nil
 	case "slack_token":
 		return cfg.SlackToken, nil
 	case "discord_token":
 		return cfg.DiscordToken, nil
 	case "telegram_token":
 		return cfg.TelegramToken, nil
-	case "gmail_cred_path":
-		return cfg.GmailCredPath, nil
+	case "email_address":
+		return cfg.EmailAddress, nil
+	case "email_password":
+		return cfg.EmailPassword, nil
+	case "imap_server":
+		return cfg.IMAPServer, nil
+	case "imap_port":
+		return cfg.IMAPPort, nil
+	case "smtp_server":
+		return cfg.SMTPServer, nil
+	case "smtp_port":
+		return cfg.SMTPPort, nil
 	case "github_token":
 		return cfg.GitHubToken, nil
 	case "gitlab_token":
@@ -248,10 +280,16 @@ func (c *Config) Redacted() map[string]string {
 		"reddit_client_secret":  redact(c.RedditClientSecret),
 		"mastodon_server":       c.MastodonServer,
 		"mastodon_token":        redact(c.MastodonToken),
+		"youtube_api_key":       redact(c.YouTubeAPIKey),
 		"slack_token":           redact(c.SlackToken),
 		"discord_token":         redact(c.DiscordToken),
 		"telegram_token":        redact(c.TelegramToken),
-		"gmail_cred_path":       c.GmailCredPath,
+		"email_address":         c.EmailAddress,
+		"email_password":        redact(c.EmailPassword),
+		"imap_server":           c.IMAPServer,
+		"imap_port":             c.IMAPPort,
+		"smtp_server":           c.SMTPServer,
+		"smtp_port":             c.SMTPPort,
 		"github_token":          redact(c.GitHubToken),
 		"gitlab_token":          redact(c.GitLabToken),
 		"linear_token":          redact(c.LinearToken),

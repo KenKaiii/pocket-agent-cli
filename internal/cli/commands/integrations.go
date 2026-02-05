@@ -81,6 +81,22 @@ var allIntegrations = []Integration{
 		AuthNeeded:  false,
 		Commands:    []string{"pocket utility weather now [location]", "pocket utility weather forecast [location]"},
 	},
+	{
+		ID:          "crypto",
+		Name:        "CoinGecko",
+		Group:       "utility",
+		Description: "Cryptocurrency prices, market data, and trending coins",
+		AuthNeeded:  false,
+		Commands:    []string{"pocket utility crypto price [coins...]", "pocket utility crypto info [coin]", "pocket utility crypto top", "pocket utility crypto trending", "pocket utility crypto search [query]"},
+	},
+	{
+		ID:          "ipinfo",
+		Name:        "IP Geolocation",
+		Group:       "utility",
+		Description: "IP address lookup with geolocation data",
+		AuthNeeded:  false,
+		Commands:    []string{"pocket utility ip me", "pocket utility ip lookup [ip]"},
+	},
 
 	// Dev - No Auth
 	{
@@ -157,16 +173,25 @@ var allIntegrations = []Integration{
 		Commands:    []string{"pocket social mastodon timeline", "pocket social mastodon post [content]", "pocket social mastodon search [query]"},
 		SetupCmd:    "pocket setup show mastodon",
 	},
+	{
+		ID:          "youtube",
+		Name:        "YouTube",
+		Group:       "social",
+		Description: "Search videos, get channel info, video metrics, comments, and trending",
+		AuthNeeded:  true,
+		Commands:    []string{"pocket social youtube search [query]", "pocket social youtube video [id]", "pocket social youtube channel [id]", "pocket social youtube videos [channel-id]", "pocket social youtube comments [video-id]", "pocket social youtube trending"},
+		SetupCmd:    "pocket setup show youtube",
+	},
 
 	// Communication - Auth Required
 	{
-		ID:          "gmail",
-		Name:        "Gmail",
+		ID:          "email",
+		Name:        "Email (IMAP/SMTP)",
 		Group:       "comms",
-		Description: "Read, search, and send emails via Gmail",
+		Description: "Read, search, send, and reply to emails via IMAP/SMTP (Gmail, Outlook, Yahoo, etc.)",
 		AuthNeeded:  true,
-		Commands:    []string{"pocket comms email list", "pocket comms email read [id]", "pocket comms email send [body]", "pocket comms email search [query]"},
-		SetupCmd:    "pocket setup show gmail",
+		Commands:    []string{"pocket comms email list", "pocket comms email read [uid]", "pocket comms email send [body]", "pocket comms email reply [uid] [body]", "pocket comms email search [query]", "pocket comms email mailboxes"},
+		SetupCmd:    "pocket setup show email",
 	},
 	{
 		ID:          "slack",
@@ -403,8 +428,16 @@ func getIntegrationStatus(cfg *config.Config, integ Integration) string {
 		if v, _ := config.Get("mastodon_token"); v != "" {
 			return "ready"
 		}
-	case "gmail":
-		if v, _ := config.Get("gmail_cred_path"); v != "" {
+	case "youtube":
+		if v, _ := config.Get("youtube_api_key"); v != "" {
+			return "ready"
+		}
+	case "email":
+		addr, _ := config.Get("email_address")
+		pass, _ := config.Get("email_password")
+		imap, _ := config.Get("imap_server")
+		smtp, _ := config.Get("smtp_server")
+		if addr != "" && pass != "" && imap != "" && smtp != "" {
 			return "ready"
 		}
 	case "slack":

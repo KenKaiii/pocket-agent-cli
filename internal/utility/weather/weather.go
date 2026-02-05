@@ -15,30 +15,30 @@ var client = &http.Client{Timeout: 10 * time.Second}
 
 // Current is LLM-friendly current weather
 type Current struct {
-	Location    string `json:"location"`
-	Condition   string `json:"condition"`
-	TempC       int    `json:"temp_c"`
-	TempF       int    `json:"temp_f"`
-	FeelsLikeC  int    `json:"feels_like_c"`
-	FeelsLikeF  int    `json:"feels_like_f"`
-	Humidity    int    `json:"humidity"`
-	WindKph     int    `json:"wind_kph"`
-	WindMph     int    `json:"wind_mph"`
-	WindDir     string `json:"wind_dir"`
-	Visibility  int    `json:"visibility_km"`
-	UV          int    `json:"uv"`
+	Location   string `json:"location"`
+	Condition  string `json:"condition"`
+	TempC      int    `json:"temp_c"`
+	TempF      int    `json:"temp_f"`
+	FeelsLikeC int    `json:"feels_like_c"`
+	FeelsLikeF int    `json:"feels_like_f"`
+	Humidity   int    `json:"humidity"`
+	WindKph    int    `json:"wind_kph"`
+	WindMph    int    `json:"wind_mph"`
+	WindDir    string `json:"wind_dir"`
+	Visibility int    `json:"visibility_km"`
+	UV         int    `json:"uv"`
 }
 
 // Forecast is LLM-friendly forecast day
 type Forecast struct {
-	Date      string `json:"date"`
-	Condition string `json:"condition"`
-	MaxC      int    `json:"max_c"`
-	MinC      int    `json:"min_c"`
-	MaxF      int    `json:"max_f"`
-	MinF      int    `json:"min_f"`
-	ChanceRain int   `json:"chance_rain"`
-	Humidity  int    `json:"humidity"`
+	Date       string `json:"date"`
+	Condition  string `json:"condition"`
+	MaxC       int    `json:"max_c"`
+	MinC       int    `json:"min_c"`
+	MaxF       int    `json:"max_f"`
+	MinF       int    `json:"min_f"`
+	ChanceRain int    `json:"chance_rain"`
+	Humidity   int    `json:"humidity"`
 }
 
 // Weather is the full response
@@ -115,17 +115,17 @@ func fetchWeather(location string, forecastDays int) error {
 
 	var data struct {
 		CurrentCondition []struct {
-			TempC       string `json:"temp_C"`
-			TempF       string `json:"temp_F"`
-			FeelsLikeC  string `json:"FeelsLikeC"`
-			FeelsLikeF  string `json:"FeelsLikeF"`
-			Humidity    string `json:"humidity"`
-			WindspeedKmph string `json:"windspeedKmph"`
+			TempC          string `json:"temp_C"`
+			TempF          string `json:"temp_F"`
+			FeelsLikeC     string `json:"FeelsLikeC"`
+			FeelsLikeF     string `json:"FeelsLikeF"`
+			Humidity       string `json:"humidity"`
+			WindspeedKmph  string `json:"windspeedKmph"`
 			WindspeedMiles string `json:"windspeedMiles"`
 			WindDir16Point string `json:"winddir16Point"`
-			Visibility  string `json:"visibility"`
-			UVIndex     string `json:"uvIndex"`
-			WeatherDesc []struct {
+			Visibility     string `json:"visibility"`
+			UVIndex        string `json:"uvIndex"`
+			WeatherDesc    []struct {
 				Value string `json:"value"`
 			} `json:"weatherDesc"`
 		} `json:"current_condition"`
@@ -138,12 +138,12 @@ func fetchWeather(location string, forecastDays int) error {
 			} `json:"country"`
 		} `json:"nearest_area"`
 		Weather []struct {
-			Date    string `json:"date"`
+			Date     string `json:"date"`
 			MaxTempC string `json:"maxtempC"`
 			MinTempC string `json:"mintempC"`
 			MaxTempF string `json:"maxtempF"`
 			MinTempF string `json:"mintempF"`
-			Hourly []struct {
+			Hourly   []struct {
 				ChanceOfRain string `json:"chanceofrain"`
 				Humidity     string `json:"humidity"`
 				WeatherDesc  []struct {

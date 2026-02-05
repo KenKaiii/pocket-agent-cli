@@ -2,6 +2,7 @@ package output
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"text/tabwriter"
@@ -11,6 +12,25 @@ var (
 	format  = "json"
 	verbose = false
 )
+
+// PrintedError wraps an error that has already been printed
+type PrintedError struct {
+	Err error
+}
+
+func (e *PrintedError) Error() string {
+	return e.Err.Error()
+}
+
+func (e *PrintedError) Unwrap() error {
+	return e.Err
+}
+
+// IsPrinted checks if an error has already been printed
+func IsPrinted(err error) bool {
+	var pe *PrintedError
+	return errors.As(err, &pe)
+}
 
 // SetFormat sets the global output format
 func SetFormat(f string) {
@@ -50,7 +70,7 @@ func Print(data any) error {
 	}
 }
 
-// PrintError outputs an error in the configured format
+// PrintError outputs an error in the configured format and returns a PrintedError
 func PrintError(code, message string, details any) error {
 	resp := Response{
 		Success: false,
@@ -63,11 +83,13 @@ func PrintError(code, message string, details any) error {
 
 	switch format {
 	case "json":
-		return printJSON(resp)
+		printJSON(resp)
 	default:
 		fmt.Fprintf(os.Stderr, "Error [%s]: %s\n", code, message)
-		return nil
 	}
+
+	// Return a PrintedError so callers know it's already been output
+	return &PrintedError{Err: fmt.Errorf("%s: %s", code, message)}
 }
 
 func printJSON(v any) error {

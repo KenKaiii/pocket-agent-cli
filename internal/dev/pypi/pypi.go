@@ -18,17 +18,17 @@ var client = &http.Client{Timeout: 10 * time.Second}
 
 // Package is LLM-friendly package info
 type Package struct {
-	Name        string   `json:"name"`
-	Version     string   `json:"version"`
-	Summary     string   `json:"summary,omitempty"`
-	Author      string   `json:"author,omitempty"`
-	License     string   `json:"license,omitempty"`
-	Homepage    string   `json:"homepage,omitempty"`
-	Repository  string   `json:"repo,omitempty"`
-	Keywords    []string `json:"keywords,omitempty"`
-	Requires    []string `json:"requires,omitempty"`
-	PythonReq   string   `json:"python,omitempty"`
-	Updated     string   `json:"updated,omitempty"`
+	Name       string   `json:"name"`
+	Version    string   `json:"version"`
+	Summary    string   `json:"summary,omitempty"`
+	Author     string   `json:"author,omitempty"`
+	License    string   `json:"license,omitempty"`
+	Homepage   string   `json:"homepage,omitempty"`
+	Repository string   `json:"repo,omitempty"`
+	Keywords   []string `json:"keywords,omitempty"`
+	Requires   []string `json:"requires,omitempty"`
+	PythonReq  string   `json:"python,omitempty"`
+	Updated    string   `json:"updated,omitempty"`
 }
 
 // SearchResult is LLM-friendly search result

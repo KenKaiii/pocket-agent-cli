@@ -8,9 +8,9 @@ import (
 
 func NewCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "discord",
+		Use:     "discord",
 		Aliases: []string{"dc"},
-		Short: "Discord commands",
+		Short:   "Discord commands",
 	}
 
 	cmd.AddCommand(newGuildsCmd())

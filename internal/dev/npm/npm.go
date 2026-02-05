@@ -18,25 +18,25 @@ var client = &http.Client{Timeout: 10 * time.Second}
 
 // Package is LLM-friendly package info
 type Package struct {
-	Name        string   `json:"name"`
-	Version     string   `json:"version"`
-	Description string   `json:"desc,omitempty"`
-	Author      string   `json:"author,omitempty"`
-	License     string   `json:"license,omitempty"`
-	Homepage    string   `json:"homepage,omitempty"`
-	Repository  string   `json:"repo,omitempty"`
-	Keywords    []string `json:"keywords,omitempty"`
-	Dependencies int     `json:"deps"`
-	Updated     string   `json:"updated,omitempty"`
+	Name         string   `json:"name"`
+	Version      string   `json:"version"`
+	Description  string   `json:"desc,omitempty"`
+	Author       string   `json:"author,omitempty"`
+	License      string   `json:"license,omitempty"`
+	Homepage     string   `json:"homepage,omitempty"`
+	Repository   string   `json:"repo,omitempty"`
+	Keywords     []string `json:"keywords,omitempty"`
+	Dependencies int      `json:"deps"`
+	Updated      string   `json:"updated,omitempty"`
 }
 
 // SearchResult is LLM-friendly search result
 type SearchResult struct {
-	Name        string `json:"name"`
-	Version     string `json:"version"`
-	Description string `json:"desc,omitempty"`
-	Author      string `json:"author,omitempty"`
-	Downloads   int    `json:"downloads,omitempty"`
+	Name        string  `json:"name"`
+	Version     string  `json:"version"`
+	Description string  `json:"desc,omitempty"`
+	Author      string  `json:"author,omitempty"`
+	Downloads   int     `json:"downloads,omitempty"`
 	Score       float64 `json:"score,omitempty"`
 }
 
@@ -145,7 +145,7 @@ func newInfoCmd() *cobra.Command {
 				Author   struct {
 					Name string `json:"name"`
 				} `json:"author"`
-				Time map[string]string `json:"time"`
+				Time     map[string]string `json:"time"`
 				Versions map[string]struct {
 					Dependencies map[string]string `json:"dependencies"`
 				} `json:"versions"`
