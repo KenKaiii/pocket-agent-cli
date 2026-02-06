@@ -2,6 +2,7 @@ package stackexchange
 
 import (
 	"compress/gzip"
+	"context"
 	"encoding/json"
 	"fmt"
 	"html"
@@ -18,8 +19,8 @@ import (
 const baseURL = "https://api.stackexchange.com/2.3"
 
 var (
-	client    = &http.Client{Timeout: 10 * time.Second}
-	htmlTagRe = regexp.MustCompile(`<[^>]*>`)
+	httpClient = &http.Client{}
+	htmlTagRe  = regexp.MustCompile(`<[^>]*>`)
 )
 
 // Question is LLM-friendly question output
@@ -206,9 +207,12 @@ type seItem struct {
 }
 
 func seGet(endpoint string, params url.Values, result any) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	reqURL := baseURL + endpoint + "?" + params.Encode()
 
-	req, err := http.NewRequest("GET", reqURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {
 		return err
 	}
@@ -216,7 +220,7 @@ func seGet(endpoint string, params url.Values, result any) error {
 	req.Header.Set("User-Agent", "Pocket-CLI/1.0")
 	req.Header.Set("Accept-Encoding", "gzip")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}

@@ -2,6 +2,7 @@ package notify
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,6 +13,8 @@ import (
 	"github.com/unstablemind/pocket/internal/common/config"
 	"github.com/unstablemind/pocket/pkg/output"
 )
+
+var httpClient = &http.Client{}
 
 // NtfyResponse represents the response from ntfy.sh
 type NtfyResponse struct {
@@ -139,7 +142,10 @@ func sendNtfy(topic, message, title string, priority int, tags string) error {
 		})
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBufferString(message))
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBufferString(message))
 	if err != nil {
 		return output.PrintError("request_failed", err.Error(), nil)
 	}
@@ -155,8 +161,7 @@ func sendNtfy(topic, message, title string, priority int, tags string) error {
 		req.Header.Set("Tags", tags)
 	}
 
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return output.PrintError("send_failed", err.Error(), map[string]any{
 			"topic": topic,
@@ -241,15 +246,17 @@ func sendPushover(token, user, message, title string, priority int, sound string
 		return output.PrintError("encode_failed", err.Error(), nil)
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(jsonData))
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewBuffer(jsonData))
 	if err != nil {
 		return output.PrintError("request_failed", err.Error(), nil)
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 30 * time.Second}
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return output.PrintError("send_failed", err.Error(), map[string]any{
 			"hint": "Check your internet connection",

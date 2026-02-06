@@ -1,6 +1,7 @@
 package ipinfo
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net"
@@ -13,7 +14,7 @@ import (
 
 const baseURL = "https://ipinfo.io"
 
-var client = &http.Client{Timeout: 10 * time.Second}
+var httpClient = &http.Client{}
 
 // IPInfo is LLM-friendly IP information
 type IPInfo struct {
@@ -74,12 +75,15 @@ func newMyIPCmd() *cobra.Command {
 }
 
 func fetchIPInfo(ip string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	reqURL := baseURL + "/json"
 	if ip != "" {
 		reqURL = fmt.Sprintf("%s/%s/json", baseURL, ip)
 	}
 
-	req, err := http.NewRequest("GET", reqURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {
 		return output.PrintError("fetch_failed", err.Error(), nil)
 	}
@@ -87,7 +91,7 @@ func fetchIPInfo(ip string) error {
 	req.Header.Set("User-Agent", "Pocket-CLI/1.0")
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return output.PrintError("fetch_failed", err.Error(), nil)
 	}

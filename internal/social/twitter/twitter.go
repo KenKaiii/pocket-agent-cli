@@ -2,9 +2,12 @@ package twitter
 
 import (
 	"bytes"
+	"context"
 	"crypto/hmac"
+	"crypto/rand"
 	"crypto/sha1"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -77,7 +80,9 @@ func newOAuthClient() (*oauthClient, error) {
 }
 
 func (c *oauthClient) generateNonce() string {
-	return fmt.Sprintf("%d", time.Now().UnixNano())
+	b := make([]byte, 16)
+	rand.Read(b)
+	return hex.EncodeToString(b)
 }
 
 func (c *oauthClient) generateSignature(method, urlStr string, params map[string]string) string {
@@ -148,7 +153,10 @@ func (c *oauthClient) buildAuthHeader(method, urlStr string) string {
 	return "OAuth " + strings.Join(headerParts, ", ")
 }
 
-func (c *oauthClient) doRequest(method, urlStr string, body interface{}) ([]byte, error) {
+func (c *oauthClient) doRequest(method, urlStr string, body any) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	var reqBody io.Reader
 	if body != nil {
 		jsonBody, err := json.Marshal(body)
@@ -158,7 +166,7 @@ func (c *oauthClient) doRequest(method, urlStr string, body interface{}) ([]byte
 		reqBody = bytes.NewBuffer(jsonBody)
 	}
 
-	req, err := http.NewRequest(method, urlStr, reqBody)
+	req, err := http.NewRequestWithContext(ctx, method, urlStr, reqBody)
 	if err != nil {
 		return nil, err
 	}
@@ -166,7 +174,7 @@ func (c *oauthClient) doRequest(method, urlStr string, body interface{}) ([]byte
 	req.Header.Set("Authorization", c.buildAuthHeader(method, urlStr))
 	req.Header.Set("Content-Type", "application/json")
 
-	client := &http.Client{Timeout: 30 * time.Second}
+	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
@@ -220,7 +228,7 @@ func newPostCmd() *cobra.Command {
 				return err
 			}
 
-			payload := map[string]interface{}{
+			payload := map[string]any{
 				"text": args[0],
 			}
 
@@ -245,7 +253,7 @@ func newPostCmd() *cobra.Command {
 				return output.PrintError("parse_error", err.Error(), nil)
 			}
 
-			return output.Print(map[string]interface{}{
+			return output.Print(map[string]any{
 				"id":   result.Data.ID,
 				"text": result.Data.Text,
 				"url":  fmt.Sprintf("https://x.com/i/status/%s", result.Data.ID),
@@ -275,7 +283,7 @@ func newDeleteCmd() *cobra.Command {
 				return output.PrintError("delete_failed", err.Error(), nil)
 			}
 
-			return output.Print(map[string]interface{}{
+			return output.Print(map[string]any{
 				"deleted": true,
 				"id":      args[0],
 			})
@@ -320,7 +328,7 @@ func newMeCmd() *cobra.Command {
 				return output.PrintError("parse_error", err.Error(), nil)
 			}
 
-			return output.Print(map[string]interface{}{
+			return output.Print(map[string]any{
 				"id":          result.Data.ID,
 				"name":        result.Data.Name,
 				"username":    result.Data.Username,

@@ -2,6 +2,7 @@ package telegram
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 
 const baseURL = "https://api.telegram.org/bot"
 
-var client = &http.Client{Timeout: 30 * time.Second}
+var httpClient = &http.Client{}
 
 // BotInfo is LLM-friendly bot information
 type BotInfo struct {
@@ -440,6 +441,9 @@ func getToken() (string, error) {
 
 // callAPI makes a request to the Telegram Bot API
 func callAPI(token, method string, params map[string]any) (*apiResponse, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	url := baseURL + token + "/" + method
 
 	var reqBody []byte
@@ -454,7 +458,7 @@ func callAPI(token, method string, params map[string]any) (*apiResponse, error) 
 		}
 	}
 
-	req, err := http.NewRequest("POST", url, bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", url, bytes.NewReader(reqBody))
 	if err != nil {
 		return nil, output.PrintError("request_failed", "Failed to create request", map[string]any{
 			"error": err.Error(),
@@ -463,7 +467,7 @@ func callAPI(token, method string, params map[string]any) (*apiResponse, error) 
 
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, output.PrintError("request_failed", "Failed to connect to Telegram API", map[string]any{
 			"error": err.Error(),

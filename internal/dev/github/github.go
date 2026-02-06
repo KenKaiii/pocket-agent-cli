@@ -1,6 +1,7 @@
 package github
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,7 +15,7 @@ import (
 
 const baseURL = "https://api.github.com"
 
-var client = &http.Client{Timeout: 15 * time.Second}
+var httpClient = &http.Client{}
 
 // Repo is LLM-friendly repo output
 type Repo struct {
@@ -391,7 +392,10 @@ func newSearchCmd() *cobra.Command {
 }
 
 func ghGet(token, url string, result any) error {
-	req, err := http.NewRequest("GET", url, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return err
 	}
@@ -400,7 +404,7 @@ func ghGet(token, url string, result any) error {
 	req.Header.Set("Accept", "application/vnd.github+json")
 	req.Header.Set("X-GitHub-Api-Version", "2022-11-28")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -408,12 +412,12 @@ func ghGet(token, url string, result any) error {
 
 	if resp.StatusCode >= 400 {
 		var errResp map[string]any
-		json.NewDecoder(resp.Body).Decode(&errResp)
-		msg, _ := errResp["message"].(string)
-		if msg == "" {
-			msg = resp.Status
+		if err := json.NewDecoder(resp.Body).Decode(&errResp); err == nil {
+			if msg, _ := errResp["message"].(string); msg != "" {
+				return fmt.Errorf("%s", msg)
+			}
 		}
-		return fmt.Errorf("%s", msg)
+		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, resp.Status)
 	}
 
 	return json.NewDecoder(resp.Body).Decode(result)

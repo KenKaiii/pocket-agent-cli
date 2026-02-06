@@ -1,12 +1,14 @@
 package trello
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/unstablemind/pocket/internal/common/config"
@@ -90,6 +92,9 @@ func NewClient(apiKey, token string) *Client {
 }
 
 func (c *Client) request(method, endpoint string, params url.Values, body string) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	if params == nil {
 		params = url.Values{}
 	}
@@ -103,7 +108,7 @@ func (c *Client) request(method, endpoint string, params url.Values, body string
 		bodyReader = strings.NewReader(body)
 	}
 
-	req, err := http.NewRequest(method, reqURL, bodyReader)
+	req, err := http.NewRequestWithContext(ctx, method, reqURL, bodyReader)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}

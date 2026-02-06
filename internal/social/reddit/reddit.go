@@ -1,6 +1,7 @@
 package reddit
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -87,13 +88,16 @@ func (c *redditClient) getAccessToken() (string, error) {
 		return cachedToken.Token, nil
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	// Request new token using password grant
 	data := url.Values{}
 	data.Set("grant_type", "password")
 	data.Set("username", c.username)
 	data.Set("password", c.password)
 
-	req, err := http.NewRequest("POST", tokenURL, strings.NewReader(data.Encode()))
+	req, err := http.NewRequestWithContext(ctx, "POST", tokenURL, strings.NewReader(data.Encode()))
 	if err != nil {
 		return "", err
 	}
@@ -147,8 +151,11 @@ func (c *redditClient) doRequest(method, endpoint string) ([]byte, error) {
 		return nil, err
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	reqURL := apiBaseURL + endpoint
-	req, err := http.NewRequest(method, reqURL, nil)
+	req, err := http.NewRequestWithContext(ctx, method, reqURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -209,10 +216,10 @@ func parseListingResponse(body []byte) ([]redditPost, error) {
 	return posts, nil
 }
 
-func formatPosts(posts []redditPost) []map[string]interface{} {
-	result := make([]map[string]interface{}, len(posts))
+func formatPosts(posts []redditPost) []map[string]any {
+	result := make([]map[string]any, len(posts))
 	for i, p := range posts {
-		result[i] = map[string]interface{}{
+		result[i] = map[string]any{
 			"id":        p.ID,
 			"title":     p.Title,
 			"author":    p.Author,
@@ -252,7 +259,7 @@ func newFeedCmd() *cobra.Command {
 				return output.PrintError("parse_error", err.Error(), nil)
 			}
 
-			return output.Print(map[string]interface{}{
+			return output.Print(map[string]any{
 				"count": len(posts),
 				"posts": formatPosts(posts),
 			})
@@ -296,7 +303,7 @@ func newSubredditCmd() *cobra.Command {
 				return output.PrintError("parse_error", err.Error(), nil)
 			}
 
-			return output.Print(map[string]interface{}{
+			return output.Print(map[string]any{
 				"subreddit": subreddit,
 				"count":     len(posts),
 				"posts":     formatPosts(posts),
@@ -344,7 +351,7 @@ func newSearchCmd() *cobra.Command {
 				return output.PrintError("parse_error", err.Error(), nil)
 			}
 
-			return output.Print(map[string]interface{}{
+			return output.Print(map[string]any{
 				"query": args[0],
 				"count": len(posts),
 				"posts": formatPosts(posts),
@@ -403,7 +410,7 @@ func newUserCmd() *cobra.Command {
 
 			posts, _ := parseListingResponse(postsBody)
 
-			return output.Print(map[string]interface{}{
+			return output.Print(map[string]any{
 				"username":      userInfo.Data.Name,
 				"created":       time.Unix(userInfo.Data.Created, 0).Format(time.RFC3339),
 				"link_karma":    userInfo.Data.LinkKarma,
@@ -473,12 +480,12 @@ func newCommentsCmd() *cobra.Command {
 				return output.PrintError("parse_error", err.Error(), nil)
 			}
 
-			comments := make([]map[string]interface{}, 0)
+			comments := make([]map[string]any, 0)
 			for _, c := range commentsListing.Data.Children {
 				if c.Data.Author == "" {
 					continue // Skip "more" placeholders
 				}
-				comments = append(comments, map[string]interface{}{
+				comments = append(comments, map[string]any{
 					"id":        c.Data.ID,
 					"author":    c.Data.Author,
 					"body":      c.Data.Body,
@@ -488,7 +495,7 @@ func newCommentsCmd() *cobra.Command {
 				})
 			}
 
-			return output.Print(map[string]interface{}{
+			return output.Print(map[string]any{
 				"post_id":  postID,
 				"count":    len(comments),
 				"comments": comments,

@@ -1,6 +1,7 @@
 package wikipedia
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,7 +15,7 @@ import (
 
 const baseURL = "https://en.wikipedia.org/w/api.php"
 
-var client = &http.Client{Timeout: 10 * time.Second}
+var httpClient = &http.Client{}
 
 // Article is LLM-friendly article output
 type Article struct {
@@ -206,16 +207,19 @@ func newArticleCmd() *cobra.Command {
 }
 
 func wikiGet(params url.Values, result any) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	reqURL := baseURL + "?" + params.Encode()
 
-	req, err := http.NewRequest("GET", reqURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {
 		return err
 	}
 
 	req.Header.Set("User-Agent", "Pocket-CLI/1.0 (https://github.com/unstablemind/pocket)")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}

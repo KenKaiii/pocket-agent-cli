@@ -2,6 +2,7 @@ package slack
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 
 const baseURL = "https://slack.com/api"
 
-var client = &http.Client{Timeout: 30 * time.Second}
+var httpClient = &http.Client{}
 
 // Channel is LLM-friendly channel output
 type Channel struct {
@@ -565,9 +566,12 @@ func getToken() (string, error) {
 
 // slackGet makes a GET request to the Slack API
 func slackGet(token, method string, params url.Values, result any) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	reqURL := fmt.Sprintf("%s/%s?%s", baseURL, method, params.Encode())
 
-	req, err := http.NewRequest("GET", reqURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {
 		return output.PrintError("request_failed", err.Error(), nil)
 	}
@@ -575,7 +579,7 @@ func slackGet(token, method string, params url.Values, result any) error {
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return output.PrintError("request_failed", err.Error(), nil)
 	}
@@ -599,6 +603,9 @@ func slackGet(token, method string, params url.Values, result any) error {
 
 // slackPost makes a POST request to the Slack API
 func slackPost(token, method string, body map[string]string, result any) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	reqURL := fmt.Sprintf("%s/%s", baseURL, method)
 
 	jsonBody, err := json.Marshal(body)
@@ -606,7 +613,7 @@ func slackPost(token, method string, body map[string]string, result any) error {
 		return output.PrintError("request_failed", err.Error(), nil)
 	}
 
-	req, err := http.NewRequest("POST", reqURL, bytes.NewBuffer(jsonBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", reqURL, bytes.NewBuffer(jsonBody))
 	if err != nil {
 		return output.PrintError("request_failed", err.Error(), nil)
 	}
@@ -614,7 +621,7 @@ func slackPost(token, method string, body map[string]string, result any) error {
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json; charset=utf-8")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return output.PrintError("request_failed", err.Error(), nil)
 	}

@@ -2,6 +2,7 @@ package jira
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -15,7 +16,7 @@ import (
 	"github.com/unstablemind/pocket/pkg/output"
 )
 
-var client = &http.Client{Timeout: 15 * time.Second}
+var httpClient = &http.Client{}
 
 // Issue is LLM-friendly issue output
 type Issue struct {
@@ -391,14 +392,17 @@ func getCredentials() (baseURL, email, token string, err error) {
 }
 
 func jiraGet(baseURL, email, token, apiURL string, result any) error {
-	req, err := http.NewRequest("GET", apiURL, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
 	if err != nil {
 		return err
 	}
 
 	setAuthHeaders(req, email, token)
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -412,12 +416,15 @@ func jiraGet(baseURL, email, token, apiURL string, result any) error {
 }
 
 func jiraPost(baseURL, email, token, apiURL string, body any, result any) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	jsonBody, err := json.Marshal(body)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", apiURL, bytes.NewReader(jsonBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewReader(jsonBody))
 	if err != nil {
 		return err
 	}
@@ -425,7 +432,7 @@ func jiraPost(baseURL, email, token, apiURL string, body any, result any) error 
 	setAuthHeaders(req, email, token)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}

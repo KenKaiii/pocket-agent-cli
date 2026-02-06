@@ -1,6 +1,7 @@
 package youtube
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,7 +17,7 @@ import (
 
 const baseURL = "https://www.googleapis.com/youtube/v3"
 
-var client = &http.Client{Timeout: 15 * time.Second}
+var httpClient = &http.Client{}
 
 // Video is LLM-friendly video output
 type Video struct {
@@ -688,14 +689,17 @@ func getAPIKey() (string, error) {
 }
 
 func doRequest(reqURL string) ([]byte, error) {
-	req, err := http.NewRequest("GET", reqURL, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {
 		return nil, output.PrintError("request_failed", err.Error(), nil)
 	}
 
 	req.Header.Set("User-Agent", "Pocket-CLI/1.0")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, output.PrintError("request_failed", err.Error(), nil)
 	}

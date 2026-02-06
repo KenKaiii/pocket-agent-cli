@@ -1,6 +1,7 @@
 package urlshort
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,8 +15,7 @@ import (
 
 const isgdBaseURL = "https://is.gd/create.php"
 
-var client = &http.Client{
-	Timeout: 15 * time.Second,
+var httpClient = &http.Client{
 	CheckRedirect: func(req *http.Request, via []*http.Request) error {
 		// Don't follow redirects automatically for expand command
 		return http.ErrUseLastResponse
@@ -132,15 +132,18 @@ func newExpandCmd() *cobra.Command {
 			currentURL := shortURL
 			finalStatus := 200
 
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
 			// Follow redirects manually to track each hop
 			for i := 0; i < maxHops; i++ {
-				req, err := http.NewRequest("HEAD", currentURL, nil)
+				req, err := http.NewRequestWithContext(ctx, "HEAD", currentURL, nil)
 				if err != nil {
 					return output.PrintError("fetch_failed", err.Error(), nil)
 				}
 				req.Header.Set("User-Agent", "Pocket-CLI/1.0")
 
-				resp, err := client.Do(req)
+				resp, err := httpClient.Do(req)
 				if err != nil {
 					return output.PrintError("fetch_failed", err.Error(), nil)
 				}
@@ -190,10 +193,13 @@ func newExpandCmd() *cobra.Command {
 }
 
 func doRequest(reqURL string) (*http.Response, error) {
-	// Create a separate client for API requests that follows redirects
-	apiClient := &http.Client{Timeout: 15 * time.Second}
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
 
-	req, err := http.NewRequest("GET", reqURL, nil)
+	// Create a separate client for API requests that follows redirects
+	apiClient := &http.Client{}
+
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {
 		return nil, output.PrintError("fetch_failed", err.Error(), nil)
 	}

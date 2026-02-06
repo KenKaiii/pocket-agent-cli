@@ -1,6 +1,7 @@
 package weather
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,7 +12,7 @@ import (
 	"github.com/unstablemind/pocket/pkg/output"
 )
 
-var client = &http.Client{Timeout: 10 * time.Second}
+var httpClient = &http.Client{}
 
 // Current is LLM-friendly current weather
 type Current struct {
@@ -93,17 +94,20 @@ func newForecastCmd() *cobra.Command {
 }
 
 func fetchWeather(location string, forecastDays int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	// Using wttr.in JSON API
 	reqURL := fmt.Sprintf("https://wttr.in/%s?format=j1", url.PathEscape(location))
 
-	req, err := http.NewRequest("GET", reqURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {
 		return output.PrintError("fetch_failed", err.Error(), nil)
 	}
 
 	req.Header.Set("User-Agent", "curl/7.68.0")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return output.PrintError("fetch_failed", err.Error(), nil)
 	}

@@ -1,6 +1,7 @@
 package vercel
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,7 +14,7 @@ import (
 
 const baseURL = "https://api.vercel.com"
 
-var client = &http.Client{Timeout: 15 * time.Second}
+var httpClient = &http.Client{}
 
 // Project is LLM-friendly project output
 type Project struct {
@@ -273,7 +274,10 @@ func getToken() (string, error) {
 }
 
 func vcGet(token, url string, result any) error {
-	req, err := http.NewRequest("GET", url, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return err
 	}
@@ -281,7 +285,7 @@ func vcGet(token, url string, result any) error {
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Content-Type", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}

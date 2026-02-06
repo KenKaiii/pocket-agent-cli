@@ -1,6 +1,7 @@
 package translate
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -17,7 +18,7 @@ import (
 
 const baseURL = "https://api.mymemory.translated.net"
 
-var client = &http.Client{Timeout: 15 * time.Second}
+var httpClient = &http.Client{}
 
 // Translation is LLM-friendly translation output
 type Translation struct {
@@ -155,7 +156,10 @@ func newLanguagesCmd() *cobra.Command {
 }
 
 func doRequest(reqURL string) (*http.Response, error) {
-	req, err := http.NewRequest("GET", reqURL, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {
 		return nil, output.PrintError("fetch_failed", err.Error(), nil)
 	}
@@ -163,7 +167,7 @@ func doRequest(reqURL string) (*http.Response, error) {
 	req.Header.Set("User-Agent", "Pocket-CLI/1.0")
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, output.PrintError("fetch_failed", err.Error(), nil)
 	}

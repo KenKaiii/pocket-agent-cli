@@ -1,6 +1,7 @@
 package pypi
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,7 +15,7 @@ import (
 
 const baseURL = "https://pypi.org"
 
-var client = &http.Client{Timeout: 10 * time.Second}
+var httpClient = &http.Client{}
 
 // Package is LLM-friendly package info
 type Package struct {
@@ -326,7 +327,10 @@ type pypiResponse struct {
 }
 
 func pypiGet(url string, result any) error {
-	req, err := http.NewRequest("GET", url, nil)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return err
 	}
@@ -334,7 +338,7 @@ func pypiGet(url string, result any) error {
 	req.Header.Set("User-Agent", "Pocket-CLI/1.0")
 	req.Header.Set("Accept", "application/json")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return err
 	}

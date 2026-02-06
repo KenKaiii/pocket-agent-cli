@@ -1,6 +1,7 @@
 package twilio
 
 import (
+	"context"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
@@ -14,6 +15,8 @@ import (
 	"github.com/unstablemind/pocket/internal/common/config"
 	"github.com/unstablemind/pocket/pkg/output"
 )
+
+var httpClient = &http.Client{}
 
 const baseURL = "https://api.twilio.com/2010-04-01/Accounts"
 
@@ -135,8 +138,11 @@ func newSendCmd() *cobra.Command {
 			data.Set("Body", body)
 
 			// Make API request
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
 			apiURL := fmt.Sprintf("%s/%s/Messages.json", baseURL, sid)
-			req, err := http.NewRequest("POST", apiURL, strings.NewReader(data.Encode()))
+			req, err := http.NewRequestWithContext(ctx, "POST", apiURL, strings.NewReader(data.Encode()))
 			if err != nil {
 				return output.PrintError("request_failed", err.Error(), nil)
 			}
@@ -144,8 +150,7 @@ func newSendCmd() *cobra.Command {
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			req.Header.Set("Authorization", "Basic "+basicAuth(sid, token))
 
-			client := &http.Client{Timeout: 30 * time.Second}
-			resp, err := client.Do(req)
+			resp, err := httpClient.Do(req)
 			if err != nil {
 				return output.PrintError("request_failed", err.Error(), nil)
 			}
@@ -215,15 +220,17 @@ func newMessagesCmd() *cobra.Command {
 				}
 			}
 
-			req, err := http.NewRequest("GET", apiURL, nil)
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
 			if err != nil {
 				return output.PrintError("request_failed", err.Error(), nil)
 			}
 
 			req.Header.Set("Authorization", "Basic "+basicAuth(sid, token))
 
-			client := &http.Client{Timeout: 30 * time.Second}
-			resp, err := client.Do(req)
+			resp, err := httpClient.Do(req)
 			if err != nil {
 				return output.PrintError("request_failed", err.Error(), nil)
 			}
@@ -298,16 +305,18 @@ func newMessageCmd() *cobra.Command {
 
 			messageSID := args[0]
 
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
 			apiURL := fmt.Sprintf("%s/%s/Messages/%s.json", baseURL, sid, messageSID)
-			req, err := http.NewRequest("GET", apiURL, nil)
+			req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
 			if err != nil {
 				return output.PrintError("request_failed", err.Error(), nil)
 			}
 
 			req.Header.Set("Authorization", "Basic "+basicAuth(sid, token))
 
-			client := &http.Client{Timeout: 30 * time.Second}
-			resp, err := client.Do(req)
+			resp, err := httpClient.Do(req)
 			if err != nil {
 				return output.PrintError("request_failed", err.Error(), nil)
 			}
@@ -372,16 +381,18 @@ func newAccountCmd() *cobra.Command {
 				return err
 			}
 
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
 			apiURL := fmt.Sprintf("%s/%s.json", baseURL, sid)
-			req, err := http.NewRequest("GET", apiURL, nil)
+			req, err := http.NewRequestWithContext(ctx, "GET", apiURL, nil)
 			if err != nil {
 				return output.PrintError("request_failed", err.Error(), nil)
 			}
 
 			req.Header.Set("Authorization", "Basic "+basicAuth(sid, token))
 
-			client := &http.Client{Timeout: 30 * time.Second}
-			resp, err := client.Do(req)
+			resp, err := httpClient.Do(req)
 			if err != nil {
 				return output.PrintError("request_failed", err.Error(), nil)
 			}

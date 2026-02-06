@@ -2,6 +2,7 @@ package discord
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,7 +17,7 @@ import (
 
 const baseURL = "https://discord.com/api/v10"
 
-var client = &http.Client{Timeout: 15 * time.Second}
+var httpClient = &http.Client{}
 
 // Guild is LLM-friendly guild output
 type Guild struct {
@@ -430,6 +431,9 @@ func getToken() (string, error) {
 }
 
 func doRequest(method, reqURL, token string, payload any) ([]byte, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+
 	var bodyReader io.Reader
 	if payload != nil {
 		jsonData, err := json.Marshal(payload)
@@ -439,7 +443,7 @@ func doRequest(method, reqURL, token string, payload any) ([]byte, error) {
 		bodyReader = bytes.NewReader(jsonData)
 	}
 
-	req, err := http.NewRequest(method, reqURL, bodyReader)
+	req, err := http.NewRequestWithContext(ctx, method, reqURL, bodyReader)
 	if err != nil {
 		return nil, output.PrintError("request_failed", err.Error(), nil)
 	}
@@ -450,7 +454,7 @@ func doRequest(method, reqURL, token string, payload any) ([]byte, error) {
 		req.Header.Set("Content-Type", "application/json")
 	}
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, output.PrintError("request_failed", err.Error(), nil)
 	}

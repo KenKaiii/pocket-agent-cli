@@ -1,6 +1,7 @@
 package dictionary
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,7 +15,7 @@ import (
 
 const baseURL = "https://api.dictionaryapi.dev/api/v2/entries/en"
 
-var client = &http.Client{Timeout: 10 * time.Second}
+var httpClient = &http.Client{}
 
 // Definition is LLM-friendly definition output
 type Definition struct {
@@ -284,16 +285,19 @@ type apiEntry struct {
 }
 
 func fetchWord(word string) ([]apiEntry, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
 	reqURL := fmt.Sprintf("%s/%s", baseURL, url.PathEscape(word))
 
-	req, err := http.NewRequest("GET", reqURL, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", reqURL, nil)
 	if err != nil {
 		return nil, output.PrintError("fetch_failed", err.Error(), nil)
 	}
 
 	req.Header.Set("User-Agent", "Pocket-CLI/1.0")
 
-	resp, err := client.Do(req)
+	resp, err := httpClient.Do(req)
 	if err != nil {
 		return nil, output.PrintError("fetch_failed", err.Error(), nil)
 	}

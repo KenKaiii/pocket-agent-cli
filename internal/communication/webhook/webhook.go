@@ -2,6 +2,7 @@ package webhook
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -12,6 +13,8 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/unstablemind/pocket/pkg/output"
 )
+
+var httpClient = &http.Client{}
 
 // WebhookResponse represents the response from a webhook call
 type WebhookResponse struct {
@@ -96,7 +99,10 @@ func newSendCmd() *cobra.Command {
 				body = bytes.NewBufferString(data)
 			}
 
-			req, err := http.NewRequest(method, url, body)
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			req, err := http.NewRequestWithContext(ctx, method, url, body)
 			if err != nil {
 				return output.PrintError("request_error", "Failed to create request", map[string]any{
 					"error": err.Error(),
@@ -122,8 +128,7 @@ func newSendCmd() *cobra.Command {
 			}
 
 			// Send request
-			client := &http.Client{Timeout: 30 * time.Second}
-			resp, err := client.Do(req)
+			resp, err := httpClient.Do(req)
 			if err != nil {
 				return output.PrintError("request_failed", "Failed to send request", map[string]any{
 					"error": err.Error(),
@@ -203,7 +208,10 @@ func newSlackCmd() *cobra.Command {
 			}
 
 			// Send request
-			req, err := http.NewRequest("POST", webhookURL, bytes.NewBuffer(jsonData))
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			req, err := http.NewRequestWithContext(ctx, "POST", webhookURL, bytes.NewBuffer(jsonData))
 			if err != nil {
 				return output.PrintError("request_error", "Failed to create request", map[string]any{
 					"error": err.Error(),
@@ -211,8 +219,7 @@ func newSlackCmd() *cobra.Command {
 			}
 			req.Header.Set("Content-Type", "application/json")
 
-			client := &http.Client{Timeout: 30 * time.Second}
-			resp, err := client.Do(req)
+			resp, err := httpClient.Do(req)
 			if err != nil {
 				return output.PrintError("request_failed", "Failed to send message to Slack", map[string]any{
 					"error": err.Error(),
@@ -296,7 +303,10 @@ func newDiscordCmd() *cobra.Command {
 			}
 
 			// Send request
-			req, err := http.NewRequest("POST", webhookURL, bytes.NewBuffer(jsonData))
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			req, err := http.NewRequestWithContext(ctx, "POST", webhookURL, bytes.NewBuffer(jsonData))
 			if err != nil {
 				return output.PrintError("request_error", "Failed to create request", map[string]any{
 					"error": err.Error(),
@@ -304,8 +314,7 @@ func newDiscordCmd() *cobra.Command {
 			}
 			req.Header.Set("Content-Type", "application/json")
 
-			client := &http.Client{Timeout: 30 * time.Second}
-			resp, err := client.Do(req)
+			resp, err := httpClient.Do(req)
 			if err != nil {
 				return output.PrintError("request_failed", "Failed to send message to Discord", map[string]any{
 					"error": err.Error(),

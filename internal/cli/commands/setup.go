@@ -164,13 +164,32 @@ For Yahoo:
    pocket config set smtp_server smtp.mail.yahoo.com`,
 		TestCommand: "pocket comms email list -l 1",
 	},
-	"google": {
-		Service: "google",
-		Name:    "Google (Calendar)",
+	"calendar": {
+		Service: "calendar",
+		Name:    "Google Calendar",
 		Keys: []KeyInfo{
-			{Key: "google_cred_path", Description: "Path to OAuth credentials JSON file", Required: true},
+			{Key: "google_client_id", Description: "OAuth 2.0 Client ID", Required: true, Example: "123456789.apps.googleusercontent.com"},
+			{Key: "google_client_secret", Description: "OAuth 2.0 Client Secret", Required: true},
+			{Key: "google_refresh_token", Description: "OAuth 2.0 Refresh Token", Required: true},
 		},
-		SetupGuide:  "1. Go to https://console.cloud.google.com/\n2. Create project, enable Calendar API\n3. Create OAuth 2.0 credentials (Desktop app)\n4. Download JSON file\n5. Run: pocket config set google_cred_path /path/to/credentials.json",
+		SetupGuide: `1. Go to https://console.cloud.google.com/
+2. Create a new project (or select existing)
+3. Enable "Google Calendar API" at:
+   https://console.cloud.google.com/apis/library/calendar-json.googleapis.com
+4. Go to Credentials > Create Credentials > OAuth client ID
+5. Select "Desktop app" as application type
+6. Copy Client ID and Client Secret
+7. Get a refresh token using OAuth Playground:
+   a. Go to https://developers.google.com/oauthplayground/
+   b. Click gear icon, check "Use your own OAuth credentials"
+   c. Enter your Client ID and Client Secret
+   d. In Step 1, select "Google Calendar API v3" scopes
+   e. Authorize and exchange for tokens
+   f. Copy the Refresh Token from Step 2
+8. Run:
+   pocket config set google_client_id <your-client-id>
+   pocket config set google_client_secret <your-client-secret>
+   pocket config set google_refresh_token <your-refresh-token>`,
 		TestCommand: "pocket productivity calendar today",
 	},
 	"notion": {
