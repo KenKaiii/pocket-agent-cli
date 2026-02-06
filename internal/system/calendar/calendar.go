@@ -1,7 +1,6 @@
 package calendar
 
 import (
-	"encoding/json"
 	"fmt"
 	"os/exec"
 	"runtime"
@@ -560,14 +559,4 @@ func escapeAppleScriptString(s string) string {
 	s = strings.ReplaceAll(s, "\\", "\\\\")
 	s = strings.ReplaceAll(s, "\"", "\\\"")
 	return s
-}
-
-// MarshalJSON customizes JSON output for Calendar
-func (c Calendar) MarshalJSON() ([]byte, error) {
-	type Alias Calendar
-	return json.Marshal(&struct {
-		Alias
-	}{
-		Alias: (Alias)(c),
-	})
 }

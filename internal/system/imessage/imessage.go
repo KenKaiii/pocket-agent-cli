@@ -308,6 +308,9 @@ func newChatsCmd() *cobra.Command {
 
 				chats = append(chats, chat)
 			}
+			if err := rows.Err(); err != nil {
+				return output.PrintError("query_error", err.Error(), nil)
+			}
 
 			return output.Print(map[string]any{
 				"chats": chats,
@@ -422,6 +425,9 @@ The contact can be a phone number, email, or name as it appears in your chats.`,
 				}
 
 				messages = append(messages, msg)
+			}
+			if err := rows.Err(); err != nil {
+				return output.PrintError("query_error", err.Error(), nil)
 			}
 
 			if len(messages) == 0 {
@@ -540,6 +546,9 @@ func newSearchCmd() *cobra.Command {
 
 				messages = append(messages, msg)
 			}
+			if err := rows.Err(); err != nil {
+				return output.PrintError("query_error", err.Error(), nil)
+			}
 
 			return output.Print(map[string]any{
 				"query":    searchQuery,
@@ -628,6 +637,9 @@ func newUnreadCmd() *cobra.Command {
 					"chat_id": chatIdentifier,
 					"count":   unreadCount,
 				})
+			}
+			if err := rows.Err(); err != nil {
+				return output.PrintError("query_error", err.Error(), nil)
 			}
 
 			return output.Print(map[string]any{

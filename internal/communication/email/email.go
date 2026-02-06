@@ -230,7 +230,10 @@ func newReadCmd() *cobra.Command {
 				done <- c.UidFetch(seqSet, items, messages)
 			}()
 
-			msg := <-messages
+			var msg *imap.Message
+			for m := range messages {
+				msg = m
+			}
 			if err := <-done; err != nil {
 				return output.PrintError("fetch_failed", err.Error(), nil)
 			}
@@ -448,7 +451,10 @@ func newReplyCmd() *cobra.Command {
 				done <- c.UidFetch(seqSet, items, messages)
 			}()
 
-			msg := <-messages
+			var msg *imap.Message
+			for m := range messages {
+				msg = m
+			}
 			if err := <-done; err != nil {
 				return output.PrintError("fetch_failed", err.Error(), nil)
 			}

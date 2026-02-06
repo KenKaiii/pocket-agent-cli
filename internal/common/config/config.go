@@ -64,10 +64,6 @@ type Config struct {
 	// News
 	NewsAPIKey string `json:"newsapi_key,omitempty"`
 
-	// AI
-	OpenAIKey    string `json:"openai_key,omitempty"`
-	AnthropicKey string `json:"anthropic_key,omitempty"`
-
 	// Utility
 	AlphaVantageKey string `json:"alphavantage_key,omitempty"`
 
@@ -226,10 +222,6 @@ func Set(key, value string) error {
 		cfg.GoogleCredPath = value
 	case "newsapi_key":
 		cfg.NewsAPIKey = value
-	case "openai_key":
-		cfg.OpenAIKey = value
-	case "anthropic_key":
-		cfg.AnthropicKey = value
 	case "alphavantage_key":
 		cfg.AlphaVantageKey = value
 	case "pushover_token":
@@ -335,10 +327,6 @@ func Get(key string) (string, error) {
 		return cfg.GoogleCredPath, nil
 	case "newsapi_key":
 		return cfg.NewsAPIKey, nil
-	case "openai_key":
-		return cfg.OpenAIKey, nil
-	case "anthropic_key":
-		return cfg.AnthropicKey, nil
 	case "alphavantage_key":
 		return cfg.AlphaVantageKey, nil
 	case "pushover_token":
@@ -410,8 +398,6 @@ func (c *Config) Redacted() map[string]string {
 		"trello_token":          redact(c.TrelloToken),
 		"google_cred_path":      c.GoogleCredPath,
 		"newsapi_key":           redact(c.NewsAPIKey),
-		"openai_key":            redact(c.OpenAIKey),
-		"anthropic_key":         redact(c.AnthropicKey),
 		"alphavantage_key":      redact(c.AlphaVantageKey),
 		"pushover_token":        redact(c.PushoverToken),
 		"pushover_user":         redact(c.PushoverUser),

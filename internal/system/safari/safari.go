@@ -839,7 +839,14 @@ func newHistoryCmd() *cobra.Command {
 			}
 
 			// Safari may have the database locked, so we need to copy it first
-			tmpDB := filepath.Join(os.TempDir(), "safari_history_copy.db")
+			tmpFile, err := os.CreateTemp("", "safari_history_*.db")
+			if err != nil {
+				return output.PrintError("temp_file_failed",
+					"Failed to create temporary file",
+					map[string]string{"error": err.Error()})
+			}
+			tmpDB := tmpFile.Name()
+			tmpFile.Close()
 			cpCmd := exec.Command("cp", historyDB, tmpDB)
 			if err := cpCmd.Run(); err != nil {
 				return output.PrintError("copy_failed",
@@ -948,6 +955,9 @@ func newHistoryCmd() *cobra.Command {
 				}
 
 				items = append(items, item)
+			}
+			if err := rows.Err(); err != nil {
+				return output.PrintError("query_error", err.Error(), nil)
 			}
 
 			return output.Print(map[string]any{

@@ -3,6 +3,7 @@ package finder
 import (
 	"bytes"
 	"fmt"
+	"html"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -291,10 +292,18 @@ func newInfoCmd() *cobra.Command {
 
 			if stat.IsDir() {
 				info.Type = "directory"
-				// Calculate directory size
+				// Calculate directory size (capped at 100k files to prevent blocking)
 				var size int64
+				var fileCount int
 				filepath.Walk(path, func(_ string, info os.FileInfo, err error) error {
-					if err == nil && !info.IsDir() {
+					if err != nil {
+						return nil
+					}
+					fileCount++
+					if fileCount >= 100000 {
+						return fmt.Errorf("limit reached")
+					}
+					if !info.IsDir() {
 						size += info.Size()
 					}
 					return nil
@@ -552,7 +561,7 @@ func newTagCmd() *cobra.Command {
 			existingTags = append(existingTags, tag)
 			plistTags := "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\"><plist version=\"1.0\"><array>"
 			for _, t := range existingTags {
-				plistTags += fmt.Sprintf("<string>%s</string>", t)
+				plistTags += fmt.Sprintf("<string>%s</string>", html.EscapeString(t))
 			}
 			plistTags += "</array></plist>"
 
@@ -643,7 +652,7 @@ func newUntagCmd() *cobra.Command {
 			} else {
 				plistTags := "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\"><plist version=\"1.0\"><array>"
 				for _, t := range newTags {
-					plistTags += fmt.Sprintf("<string>%s</string>", t)
+					plistTags += fmt.Sprintf("<string>%s</string>", html.EscapeString(t))
 				}
 				plistTags += "</array></plist>"
 
@@ -721,7 +730,7 @@ func newSearchCmd() *cobra.Command {
 		Long:  `Searches for files using Spotlight (mdfind). Supports name matching and content search.`,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			query := args[0]
+			query := strings.ReplaceAll(args[0], "'", "")
 
 			// Build mdfind command
 			mdfindArgs := []string{}
