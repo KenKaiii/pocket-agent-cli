@@ -218,7 +218,7 @@ pocket productivity logseq search "todo" # Search pages
 
 ---
 
-## 📦 All 52 integrations
+## 📦 All 51 integrations
 
 | Category | Services |
 |----------|----------|
@@ -229,7 +229,6 @@ pocket productivity logseq search "todo" # Search pages
 | **Dev Tools** (9) | GitHub, GitLab, Linear, Jira, Cloudflare, Vercel, npm, PyPI, Docker Hub |
 | **Productivity** (6) | Todoist, Notion, Google Calendar, Trello, Obsidian, Logseq |
 | **Utility** (10) | Weather, Crypto, Currency, IP lookup, DNS/WHOIS/SSL, Wayback Machine, Holidays, Translation, URL Shortener, Stocks |
-| **AI** (2) | OpenAI, Anthropic |
 | **System** (9) | Apple Calendar, Apple Reminders, Apple Notes, Apple Contacts, Apple Mail, Safari, Finder, Clipboard, iMessage *(macOS only)* |
 
 ### 27 integrations work without any setup:

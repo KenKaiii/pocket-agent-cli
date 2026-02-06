@@ -388,26 +388,6 @@ var allIntegrations = []Integration{
 		SetupCmd:    "pocket setup show logseq",
 	},
 
-	// AI - Auth Required
-	{
-		ID:          "openai",
-		Name:        "OpenAI",
-		Group:       "ai",
-		Description: "Chat completions with GPT models",
-		AuthNeeded:  true,
-		Commands:    []string{"pocket ai openai chat [prompt]", "pocket ai openai models"},
-		SetupCmd:    "pocket setup show openai",
-	},
-	{
-		ID:          "anthropic",
-		Name:        "Anthropic",
-		Group:       "ai",
-		Description: "Chat with Claude models",
-		AuthNeeded:  true,
-		Commands:    []string{"pocket ai anthropic chat [prompt]"},
-		SetupCmd:    "pocket setup show anthropic",
-	},
-
 	// Productivity - Local (Path Required)
 	{
 		ID:          "obsidian",
@@ -540,7 +520,7 @@ func newIntListCmd() *cobra.Command {
 	}
 
 	cmd.Flags().BoolVar(&noAuth, "no-auth", false, "Only show integrations that don't need authentication")
-	cmd.Flags().StringVarP(&group, "group", "g", "", "Filter by group: news, knowledge, utility, dev, social, comms, productivity, ai")
+	cmd.Flags().StringVarP(&group, "group", "g", "", "Filter by group: news, knowledge, utility, dev, social, comms, productivity, system")
 
 	return cmd
 }
@@ -585,7 +565,6 @@ func newIntGroupCmd() *cobra.Command {
 				"social":       {Name: "Social", Desc: "Social media platforms", Count: 0},
 				"comms":        {Name: "Comms", Desc: "Email and messaging", Count: 0},
 				"productivity": {Name: "Productivity", Desc: "Calendar, tasks, notes", Count: 0},
-				"ai":           {Name: "AI", Desc: "AI/LLM providers", Count: 0},
 				"system":       {Name: "System", Desc: "macOS system integrations", Count: 0},
 			}
 
@@ -611,7 +590,6 @@ func newIntGroupCmd() *cobra.Command {
 				{ID: "social", Name: groups["social"].Name, Desc: groups["social"].Desc, Count: groups["social"].Count},
 				{ID: "comms", Name: groups["comms"].Name, Desc: groups["comms"].Desc, Count: groups["comms"].Count},
 				{ID: "productivity", Name: groups["productivity"].Name, Desc: groups["productivity"].Desc, Count: groups["productivity"].Count},
-				{ID: "ai", Name: groups["ai"].Name, Desc: groups["ai"].Desc, Count: groups["ai"].Count},
 				{ID: "system", Name: groups["system"].Name, Desc: groups["system"].Desc, Count: groups["system"].Count},
 			}
 
@@ -694,14 +672,6 @@ func getIntegrationStatus(cfg *config.Config, integ Integration) string {
 		}
 	case "todoist":
 		if v, _ := config.Get("todoist_token"); v != "" {
-			return "ready"
-		}
-	case "openai":
-		if v, _ := config.Get("openai_key"); v != "" {
-			return "ready"
-		}
-	case "anthropic":
-		if v, _ := config.Get("anthropic_key"); v != "" {
 			return "ready"
 		}
 	case "newsapi":

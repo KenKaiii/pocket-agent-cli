@@ -42,7 +42,7 @@ func NewCommandsCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&group, "group", "g", "", "Filter by group: social, comms, dev, productivity, news, ai")
+	cmd.Flags().StringVarP(&group, "group", "g", "", "Filter by group: social, comms, dev, productivity, news, knowledge, utility, system")
 
 	return cmd
 }
@@ -185,14 +185,6 @@ func getAllCommands() []Group {
 				{Command: "pocket utility crypto search", Desc: "Search for coins", Args: "[query]", Flags: "-l limit"},
 				{Command: "pocket utility ip me", Desc: "Get your public IP and location"},
 				{Command: "pocket utility ip lookup", Desc: "Lookup IP geolocation", Args: "[ip]"},
-			},
-		},
-		{
-			Name: "ai",
-			Commands: []Cmd{
-				{Command: "pocket ai openai chat", Desc: "Chat with GPT", Args: "[prompt]", Flags: "-m model, --max-tokens, -t temperature"},
-				{Command: "pocket ai openai models", Desc: "List OpenAI models"},
-				{Command: "pocket ai anthropic chat", Desc: "Chat with Claude", Args: "[prompt]", Flags: "-m model, --max-tokens"},
 			},
 		},
 		{

@@ -198,24 +198,6 @@ For Yahoo:
 		SetupGuide:  "1. Go to https://linear.app/settings/api\n2. Create a personal API key\n3. Copy the key\n4. Run: pocket config set linear_token <token>",
 		TestCommand: "pocket dev linear teams",
 	},
-	"openai": {
-		Service: "openai",
-		Name:    "OpenAI",
-		Keys: []KeyInfo{
-			{Key: "openai_key", Description: "API key", Required: true, Example: "sk-xxxx"},
-		},
-		SetupGuide:  "1. Go to https://platform.openai.com/api-keys\n2. Create new secret key\n3. Copy the key\n4. Run: pocket config set openai_key <key>",
-		TestCommand: "pocket ai openai models",
-	},
-	"anthropic": {
-		Service: "anthropic",
-		Name:    "Anthropic",
-		Keys: []KeyInfo{
-			{Key: "anthropic_key", Description: "API key", Required: true, Example: "sk-ant-xxxx"},
-		},
-		SetupGuide:  "1. Go to https://console.anthropic.com/settings/keys\n2. Create new API key\n3. Copy the key\n4. Run: pocket config set anthropic_key <key>",
-		TestCommand: "pocket ai anthropic chat hello",
-	},
 	"newsapi": {
 		Service: "newsapi",
 		Name:    "NewsAPI",
