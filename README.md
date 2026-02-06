@@ -55,8 +55,9 @@ Pocket CLI changes that. It's a universal interface that lets any AI agent inter
 - Browse Hacker News, Reddit, Twitter
 - Look up weather, crypto prices, currency rates
 - Query Wikipedia, StackOverflow, dictionaries
-- Manage Todoist tasks, Notion pages, Trello boards
-- **42 integrations** across 8 categories
+- Manage Todoist tasks, Notion pages, Obsidian vaults
+- Control macOS apps: Calendar, Reminders, Notes, Contacts, Finder, Safari
+- **52 integrations** across 9 categories
 
 All with simple commands that return clean JSON — perfect for AI to understand and act on.
 
@@ -76,6 +77,13 @@ pocket dev npm info react            # npm package info
 pocket dev dockerhub search nginx    # Search Docker images
 pocket comms notify ntfy mytopic "Hello!"    # Push notification (no auth)
 pocket comms webhook slack [url] "Message"   # Slack webhook
+
+# macOS only (no auth needed)
+pocket system reminders today        # Today's reminders
+pocket system notes list             # List Apple Notes
+pocket system calendar today         # Today's calendar events
+pocket system clipboard get          # Get clipboard content
+pocket system finder search "query"  # Spotlight search
 ```
 
 ### With credentials (one-time setup)
@@ -89,6 +97,8 @@ pocket social youtube search "AI"    # Search YouTube
 pocket social twitter timeline       # Your Twitter feed
 pocket productivity todoist tasks    # Your todo list
 pocket productivity trello boards    # Your Trello boards
+pocket productivity obsidian notes   # List Obsidian notes
+pocket productivity logseq pages     # List Logseq pages
 pocket dev github repos              # Your GitHub repos
 pocket dev jira issues               # Your Jira issues
 ```
@@ -155,9 +165,60 @@ pocket comms notify ntfy alerts "Server is down!" --priority 5
 pocket comms webhook discord [url] "Deployment complete"
 ```
 
+### macOS system examples (no auth needed)
+```bash
+# Apple Reminders
+pocket system reminders lists            # List all reminder lists
+pocket system reminders today            # Today's reminders
+pocket system reminders add "Buy milk"   # Add a reminder
+pocket system reminders complete "Buy milk"  # Mark complete
+
+# Apple Notes
+pocket system notes folders              # List folders
+pocket system notes list                 # List all notes
+pocket system notes read "Shopping"      # Read a note
+pocket system notes create "Ideas" "My brilliant idea"
+
+# Apple Calendar
+pocket system apple-calendar calendars   # List calendars
+pocket system apple-calendar today       # Today's events
+pocket system apple-calendar upcoming    # Next 7 days
+
+# Apple Contacts
+pocket system contacts search "John"     # Search contacts
+pocket system contacts get "John Doe"    # Get full details
+
+# Finder & Clipboard
+pocket system finder search "project"    # Spotlight search
+pocket system finder info ~/Documents    # Get folder info
+pocket system clipboard get              # Get clipboard
+pocket system clipboard set "Hello"      # Set clipboard
+
+# Safari (requires Safari to be running)
+pocket system safari tabs                # List open tabs
+pocket system safari bookmarks           # List bookmarks
+pocket system safari history --limit 10  # Recent history
+```
+
+### Obsidian & Logseq examples
+```bash
+# Obsidian (configure vault path first)
+pocket config set obsidian_vault ~/Documents/MyVault
+pocket productivity obsidian notes       # List all notes
+pocket productivity obsidian daily       # Today's daily note
+pocket productivity obsidian search "AI" # Search notes
+pocket productivity obsidian read "Ideas"  # Read a note
+
+# Logseq (configure graph path first)
+pocket config set logseq_graph ~/Documents/MyGraph
+pocket productivity logseq pages         # List pages
+pocket productivity logseq journal       # Today's journal
+pocket productivity logseq search "todo" # Search pages
+```
+
 ---
 
-## 📦 All 42 integrations
+## 📦 All 52 integrations
 
 | Category | Services |
 |----------|----------|
@@ -166,12 +227,13 @@ pocket comms webhook discord [url] "Deployment complete"
 | **News** (3) | Hacker News, RSS feeds, NewsAPI |
 | **Knowledge** (3) | Wikipedia, StackOverflow, Dictionary |
 | **Dev Tools** (9) | GitHub, GitLab, Linear, Jira, Cloudflare, Vercel, npm, PyPI, Docker Hub |
-| **Productivity** (4) | Todoist, Notion, Calendar, Trello |
+| **Productivity** (6) | Todoist, Notion, Google Calendar, Trello, Obsidian, Logseq |
 | **Utility** (10) | Weather, Crypto, Currency, IP lookup, DNS/WHOIS/SSL, Wayback Machine, Holidays, Translation, URL Shortener, Stocks |
 | **AI** (2) | OpenAI, Anthropic |
+| **System** (8) | Apple Calendar, Apple Reminders, Apple Notes, Apple Contacts, Apple Mail, Safari, Finder, Clipboard *(macOS only)* |
 
-### 19 integrations work without any setup:
-Hacker News, RSS, Wikipedia, StackOverflow, Dictionary, Weather, Crypto, Currency, IP lookup, Domain tools, Wayback Machine, Holidays, Translation, URL Shortener, npm, PyPI, Docker Hub, ntfy notifications, Webhooks
+### 27 integrations work without any setup:
+Hacker News, RSS, Wikipedia, StackOverflow, Dictionary, Weather, Crypto, Currency, IP lookup, Domain tools, Wayback Machine, Holidays, Translation, URL Shortener, npm, PyPI, Docker Hub, ntfy notifications, Webhooks, plus all 8 macOS System integrations
 
 ---
 
