@@ -124,7 +124,15 @@ func newWhoisCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			domain := cleanDomain(args[0])
 
-			reqURL := fmt.Sprintf("https://whois.freeaiapi.xyz/?name=%s", url.QueryEscape(domain))
+			// API requires name and suffix as separate parameters
+			parts := strings.SplitN(domain, ".", 2)
+			var reqURL string
+			if len(parts) == 2 {
+				reqURL = fmt.Sprintf("https://whois.freeaiapi.xyz/?name=%s&suffix=%s",
+					url.QueryEscape(parts[0]), url.QueryEscape(parts[1]))
+			} else {
+				reqURL = fmt.Sprintf("https://whois.freeaiapi.xyz/?name=%s", url.QueryEscape(domain))
+			}
 
 			resp, err := doRequest(reqURL)
 			if err != nil {
@@ -136,6 +144,16 @@ func newWhoisCmd() *cobra.Command {
 
 			if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
 				return output.PrintError("parse_failed", err.Error(), nil)
+			}
+
+			// Check if the API returned an error
+			if status := getString(data, "status"); status == "error" {
+				errMsg := getString(data, "message")
+				if errMsg == "" {
+					errMsg = "WHOIS lookup failed"
+				}
+				return output.PrintError("whois_error", errMsg,
+					map[string]string{"domain": domain})
 			}
 
 			info := WhoisInfo{
@@ -150,15 +168,15 @@ func newWhoisCmd() *cobra.Command {
 				Country:     getString(data, "country"),
 			}
 
-			// Try alternate field names if primary ones are empty
+			// Try alternate field names used by different WHOIS APIs
 			if info.Created == "" {
-				info.Created = getString(data, "creationDate")
+				info.Created = getString(data, "creation_datetime")
+			}
+			if info.Expires == "" {
+				info.Expires = getString(data, "expiry_datetime")
 			}
 			if info.Updated == "" {
 				info.Updated = getString(data, "updatedDate")
-			}
-			if info.Expires == "" {
-				info.Expires = getString(data, "expirationDate")
 			}
 			if info.NameServers == "" {
 				info.NameServers = getString(data, "nameServers")

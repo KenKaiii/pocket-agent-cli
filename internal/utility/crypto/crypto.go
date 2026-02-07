@@ -79,7 +79,7 @@ func newPriceCmd() *cobra.Command {
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ids := strings.Join(args, ",")
-			reqURL := fmt.Sprintf("%s/simple/price?ids=%s&vs_currencies=usd&include_24hr_change=true&include_market_cap=true&include_24hr_vol=true",
+			reqURL := fmt.Sprintf("%s/coins/markets?vs_currency=usd&ids=%s&order=market_cap_desc&sparkline=false",
 				baseURL, url.QueryEscape(ids))
 
 			resp, err := doRequest(reqURL)
@@ -88,11 +88,14 @@ func newPriceCmd() *cobra.Command {
 			}
 			defer resp.Body.Close()
 
-			var data map[string]struct {
-				USD       float64 `json:"usd"`
-				Change24h float64 `json:"usd_24h_change"`
-				MarketCap float64 `json:"usd_market_cap"`
-				Volume24h float64 `json:"usd_24h_vol"`
+			var data []struct {
+				ID        string  `json:"id"`
+				Symbol    string  `json:"symbol"`
+				Name      string  `json:"name"`
+				Price     float64 `json:"current_price"`
+				Change24h float64 `json:"price_change_percentage_24h"`
+				MarketCap float64 `json:"market_cap"`
+				Volume24h float64 `json:"total_volume"`
 			}
 
 			if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
@@ -104,10 +107,12 @@ func newPriceCmd() *cobra.Command {
 			}
 
 			var prices []Price
-			for id, p := range data {
+			for _, p := range data {
 				prices = append(prices, Price{
-					ID:        id,
-					PriceUSD:  p.USD,
+					ID:        p.ID,
+					Symbol:    p.Symbol,
+					Name:      p.Name,
+					PriceUSD:  p.Price,
 					Change24h: p.Change24h,
 					MarketCap: p.MarketCap,
 					Volume24h: p.Volume24h,

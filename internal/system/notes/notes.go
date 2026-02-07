@@ -97,26 +97,33 @@ func newListCmd() *cobra.Command {
 				script = fmt.Sprintf(`
 tell application "Notes"
 	set noteList to {}
-	set theFolder to folder "%s"
-	repeat with theNote in notes of theFolder
-		set noteName to name of theNote
-		set noteFolder to name of container of theNote
-		set noteModDate to modification date of theNote as string
-		set end of noteList to noteName & "|||" & noteFolder & "|||" & noteModDate
+	set folderName to "%s"
+	repeat with theFolder in folders
+		if name of theFolder is folderName then
+			repeat with theNote in notes of theFolder
+				set noteName to name of theNote
+				set noteModDate to modification date of theNote as string
+				set end of noteList to noteName & "|||" & folderName & "|||" & noteModDate
+			end repeat
+		end if
 	end repeat
 	set AppleScript's text item delimiters to ":::"
 	return noteList as text
 end tell`, escapeAppleScript(folder))
 			} else {
-				// List all notes
+				// List all notes by iterating through each folder
 				script = `
 tell application "Notes"
 	set noteList to {}
-	repeat with theNote in notes
-		set noteName to name of theNote
-		set noteFolder to name of container of theNote
-		set noteModDate to modification date of theNote as string
-		set end of noteList to noteName & "|||" & noteFolder & "|||" & noteModDate
+	repeat with theFolder in folders
+		set folderName to name of theFolder
+		if folderName is not "Recently Deleted" then
+			repeat with theNote in notes of theFolder
+				set noteName to name of theNote
+				set noteModDate to modification date of theNote as string
+				set end of noteList to noteName & "|||" & folderName & "|||" & noteModDate
+			end repeat
+		end if
 	end repeat
 	set AppleScript's text item delimiters to ":::"
 	return noteList as text
@@ -225,36 +232,52 @@ func newReadCmd() *cobra.Command {
 			if folder != "" {
 				script = fmt.Sprintf(`
 tell application "Notes"
-	set theFolder to folder "%s"
-	set theNote to first note of theFolder whose name is "%s"
-	set noteName to name of theNote
-	set noteBody to plaintext of theNote
-	set noteFolder to name of container of theNote
-	set noteCreated to creation date of theNote as string
-	set noteModified to modification date of theNote as string
-	return noteName & "|||" & noteBody & "|||" & noteFolder & "|||" & noteCreated & "|||" & noteModified
-end tell`, escapeAppleScript(folder), escapeAppleScript(noteName))
+	set targetName to "%s"
+	set folderName to "%s"
+	repeat with theFolder in folders
+		if name of theFolder is folderName then
+			repeat with theNote in notes of theFolder
+				if name of theNote is targetName then
+					set noteBody to plaintext of theNote
+					set noteCreated to creation date of theNote as string
+					set noteModified to modification date of theNote as string
+					return targetName & "|||" & noteBody & "|||" & folderName & "|||" & noteCreated & "|||" & noteModified
+				end if
+			end repeat
+		end if
+	end repeat
+	return "NOT_FOUND"
+end tell`, escapeAppleScript(noteName), escapeAppleScript(folder))
 			} else {
 				script = fmt.Sprintf(`
 tell application "Notes"
-	set theNote to first note whose name is "%s"
-	set noteName to name of theNote
-	set noteBody to plaintext of theNote
-	set noteFolder to name of container of theNote
-	set noteCreated to creation date of theNote as string
-	set noteModified to modification date of theNote as string
-	return noteName & "|||" & noteBody & "|||" & noteFolder & "|||" & noteCreated & "|||" & noteModified
+	set targetName to "%s"
+	repeat with theFolder in folders
+		set folderName to name of theFolder
+		if folderName is not "Recently Deleted" then
+			repeat with theNote in notes of theFolder
+				if name of theNote is targetName then
+					set noteBody to plaintext of theNote
+					set noteCreated to creation date of theNote as string
+					set noteModified to modification date of theNote as string
+					return targetName & "|||" & noteBody & "|||" & folderName & "|||" & noteCreated & "|||" & noteModified
+				end if
+			end repeat
+		end if
+	end repeat
+	return "NOT_FOUND"
 end tell`, escapeAppleScript(noteName))
 			}
 
 			result, err := runAppleScript(script)
 			if err != nil {
-				if strings.Contains(err.Error(), "Can't get") {
-					return output.PrintError("note_not_found",
-						fmt.Sprintf("Note not found: %s", noteName),
-						map[string]string{"name": noteName, "folder": folder})
-				}
 				return output.PrintError("read_failed", err.Error(), nil)
+			}
+
+			if result == "NOT_FOUND" {
+				return output.PrintError("note_not_found",
+					fmt.Sprintf("Note not found: %s", noteName),
+					map[string]string{"name": noteName, "folder": folder})
 			}
 
 			parts := strings.Split(result, "|||")
@@ -351,15 +374,19 @@ func newSearchCmd() *cobra.Command {
 tell application "Notes"
 	set matchingNotes to {}
 	set searchQuery to "%s"
-	repeat with theNote in notes
-		set noteName to name of theNote
-		set noteBody to plaintext of theNote
-		set lowerName to do shell script "echo " & quoted form of noteName & " | tr '[:upper:]' '[:lower:]'"
-		set lowerBody to do shell script "echo " & quoted form of noteBody & " | tr '[:upper:]' '[:lower:]'"
-		if lowerName contains searchQuery or lowerBody contains searchQuery then
-			set noteFolder to name of container of theNote
-			set noteModDate to modification date of theNote as string
-			set end of matchingNotes to noteName & "|||" & noteFolder & "|||" & noteModDate
+	repeat with theFolder in folders
+		set folderName to name of theFolder
+		if folderName is not "Recently Deleted" then
+			repeat with theNote in notes of theFolder
+				set noteName to name of theNote
+				set noteBody to plaintext of theNote
+				set lowerName to do shell script "echo " & quoted form of noteName & " | tr '[:upper:]' '[:lower:]'"
+				set lowerBody to do shell script "echo " & quoted form of noteBody & " | tr '[:upper:]' '[:lower:]'"
+				if lowerName contains searchQuery or lowerBody contains searchQuery then
+					set noteModDate to modification date of theNote as string
+					set end of matchingNotes to noteName & "|||" & folderName & "|||" & noteModDate
+				end if
+			end repeat
 		end if
 	end repeat
 	set AppleScript's text item delimiters to ":::"

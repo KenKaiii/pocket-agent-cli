@@ -315,28 +315,31 @@ func newInfoCmd() *cobra.Command {
 				info.IsExecutable = stat.Mode().Perm()&0111 != 0
 			}
 
-			// Get extended metadata using mdls
+			// Get extended metadata using mdls (outputs fields in alphabetical order)
 			mdlsOutput, err := runCommand("mdls", "-name", "kMDItemContentType",
 				"-name", "kMDItemContentCreationDate",
-				"-name", "kMDItemLastUsedDate",
-				"-raw", path)
+				"-name", "kMDItemLastUsedDate", path)
 			if err == nil {
-				lines := strings.Split(mdlsOutput, "\n")
-				for i, line := range lines {
+				for _, line := range strings.Split(mdlsOutput, "\n") {
 					line = strings.TrimSpace(line)
-					if line == "(null)" {
-						continue
-					}
-					switch i {
-					case 0:
-						info.ContentType = line
-					case 1:
-						if t, err := time.Parse("2006-01-02 15:04:05 -0700", line); err == nil {
-							info.Created = t.Format(time.RFC3339)
+					if parts := strings.SplitN(line, "=", 2); len(parts) == 2 {
+						key := strings.TrimSpace(parts[0])
+						val := strings.TrimSpace(parts[1])
+						val = strings.Trim(val, "\"")
+						if val == "(null)" {
+							continue
 						}
-					case 2:
-						if t, err := time.Parse("2006-01-02 15:04:05 -0700", line); err == nil {
-							info.Accessed = t.Format(time.RFC3339)
+						switch key {
+						case "kMDItemContentType":
+							info.ContentType = val
+						case "kMDItemContentCreationDate":
+							if t, err := time.Parse("2006-01-02 15:04:05 -0700", val); err == nil {
+								info.Created = t.Format(time.RFC3339)
+							}
+						case "kMDItemLastUsedDate":
+							if t, err := time.Parse("2006-01-02 15:04:05 -0700", val); err == nil {
+								info.Accessed = t.Format(time.RFC3339)
+							}
 						}
 					}
 				}

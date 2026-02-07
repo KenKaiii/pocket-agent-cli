@@ -3,6 +3,7 @@ package safari
 import (
 	"bytes"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -493,81 +494,45 @@ func newBookmarksCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "bookmarks",
 		Short: "List Safari bookmarks (Favorites and other folders)",
-		Long:  "List Safari bookmarks. By default lists items from Favorites Bar. Use --folder to specify a different folder.",
+		Long:  "List Safari bookmarks from Bookmarks.plist. Requires Full Disk Access for your terminal.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Safari bookmarks are stored in a plist, we'll use AppleScript to access them
-			var script string
-			if folder != "" {
-				script = fmt.Sprintf(`
-tell application "Safari"
-	set bookmarkList to {}
-	try
-		set targetFolder to bookmark folder "%s"
-		repeat with b in bookmark items of targetFolder
-			try
-				set bName to name of b
-				set bURL to URL of b
-				if bURL is not missing value then
-					set end of bookmarkList to bName & "|||" & bURL & "|||%s"
-				end if
-			end try
-		end repeat
-	end try
-	set AppleScript's text item delimiters to ":::"
-	return bookmarkList as text
-end tell`, escapeAppleScript(folder), escapeAppleScript(folder))
-			} else {
-				// Get bookmarks from Favorites Bar
-				script = `
-tell application "Safari"
-	set bookmarkList to {}
-	try
-		set favFolder to bookmark folder "Favorites"
-		repeat with b in bookmark items of favFolder
-			try
-				set bName to name of b
-				set bURL to URL of b
-				if bURL is not missing value then
-					set end of bookmarkList to bName & "|||" & bURL & "|||Favorites"
-				end if
-			end try
-		end repeat
-	end try
-	set AppleScript's text item delimiters to ":::"
-	return bookmarkList as text
-end tell`
-			}
-
-			result, err := runAppleScript(script)
+			homeDir, err := os.UserHomeDir()
 			if err != nil {
-				return output.PrintError("bookmarks_failed", err.Error(), nil)
+				return output.PrintError("home_dir_failed", "Failed to get home directory", nil)
 			}
 
-			if result == "" {
-				return output.Print(map[string]any{
-					"bookmarks": []Bookmark{},
-					"count":     0,
-					"folder":    folder,
-				})
+			bookmarksPlist := filepath.Join(homeDir, "Library", "Safari", "Bookmarks.plist")
+
+			// Convert plist to JSON for parsing
+			plistCmd := exec.Command("plutil", "-convert", "json", "-o", "-", bookmarksPlist)
+			var stdout, stderr bytes.Buffer
+			plistCmd.Stdout = &stdout
+			plistCmd.Stderr = &stderr
+
+			if err := plistCmd.Run(); err != nil {
+				errMsg := stderr.String()
+				if strings.Contains(errMsg, "permission") || strings.Contains(errMsg, "couldn't be opened") {
+					return output.PrintError("permission_denied",
+						"Full Disk Access required to read Safari bookmarks",
+						map[string]string{
+							"path":       bookmarksPlist,
+							"suggestion": "Go to System Settings > Privacy & Security > Full Disk Access and add your terminal",
+						})
+				}
+				return output.PrintError("bookmarks_failed",
+					"Failed to read bookmarks plist",
+					map[string]string{"error": errMsg})
+			}
+
+			// Parse the bookmarks using shell script to extract from JSON
+			// The plist has a nested structure: Children[] -> Children[] -> URLString, URIDictionary.title
+			targetFolder := folder
+			if targetFolder == "" {
+				targetFolder = "BookmarksBar"
 			}
 
 			var bookmarks []Bookmark
-			items := strings.Split(result, ":::")
-			count := 0
-			for _, item := range items {
-				if limit > 0 && count >= limit {
-					break
-				}
-				parts := strings.Split(item, "|||")
-				if len(parts) >= 3 {
-					bookmarks = append(bookmarks, Bookmark{
-						Title:  strings.TrimSpace(parts[0]),
-						URL:    strings.TrimSpace(parts[1]),
-						Folder: strings.TrimSpace(parts[2]),
-					})
-					count++
-				}
-			}
+			bookmarks = parseBookmarksJSON(stdout.Bytes(), targetFolder, limit)
 
 			folderName := folder
 			if folderName == "" {
@@ -582,10 +547,132 @@ end tell`
 		},
 	}
 
-	cmd.Flags().StringVarP(&folder, "folder", "f", "", "Bookmark folder to list (default: Favorites)")
+	cmd.Flags().StringVarP(&folder, "folder", "f", "", "Bookmark folder to list (default: Favorites/BookmarksBar)")
 	cmd.Flags().IntVarP(&limit, "limit", "l", 0, "Limit number of bookmarks (0 = no limit)")
 
 	return cmd
+}
+
+// plistNode represents a node in Safari's Bookmarks.plist JSON structure
+type plistNode struct {
+	Title           string            `json:"Title"`
+	WebBookmarkType string            `json:"WebBookmarkType"`
+	URLString       string            `json:"URLString"`
+	URIDictionary   map[string]string `json:"URIDictionary"`
+	Children        []plistNode       `json:"Children"`
+	ReadingList     map[string]any    `json:"ReadingList"`
+}
+
+// parseBookmarksJSON extracts bookmarks from the plist JSON data
+func parseBookmarksJSON(data []byte, targetFolder string, limit int) []Bookmark {
+	var root plistNode
+	if err := json.Unmarshal(data, &root); err != nil {
+		return nil
+	}
+
+	var bookmarks []Bookmark
+	collectBookmarks(&root, targetFolder, &bookmarks, limit)
+	return bookmarks
+}
+
+func collectBookmarks(node *plistNode, targetFolder string, bookmarks *[]Bookmark, limit int) {
+	if limit > 0 && len(*bookmarks) >= limit {
+		return
+	}
+
+	// Check if this is the target folder
+	isTarget := false
+	if node.WebBookmarkType == "WebBookmarkTypeList" {
+		if targetFolder == "BookmarksBar" && node.Title == "BookmarksBar" {
+			isTarget = true
+		} else if targetFolder == "BookmarksMenu" && node.Title == "BookmarksMenu" {
+			isTarget = true
+		} else if node.Title == targetFolder {
+			isTarget = true
+		}
+	}
+
+	if isTarget {
+		for _, child := range node.Children {
+			if limit > 0 && len(*bookmarks) >= limit {
+				return
+			}
+			if child.WebBookmarkType == "WebBookmarkTypeLeaf" && child.URLString != "" {
+				title := ""
+				if child.URIDictionary != nil {
+					title = child.URIDictionary["title"]
+				}
+				if title == "" {
+					title = child.Title
+				}
+				*bookmarks = append(*bookmarks, Bookmark{
+					Title:  title,
+					URL:    child.URLString,
+					Folder: node.Title,
+				})
+			}
+		}
+		return
+	}
+
+	// Recurse into children
+	for i := range node.Children {
+		collectBookmarks(&node.Children[i], targetFolder, bookmarks, limit)
+	}
+}
+
+// parseReadingListJSON extracts reading list items from the plist JSON data
+func parseReadingListJSON(data []byte, limit int) []ReadingListItem {
+	var root plistNode
+	if err := json.Unmarshal(data, &root); err != nil {
+		return nil
+	}
+
+	var items []ReadingListItem
+	collectReadingList(&root, &items, limit)
+	return items
+}
+
+func collectReadingList(node *plistNode, items *[]ReadingListItem, limit int) {
+	if limit > 0 && len(*items) >= limit {
+		return
+	}
+
+	// Find the com.apple.ReadingList folder
+	if node.WebBookmarkType == "WebBookmarkTypeList" && node.Title == "com.apple.ReadingList" {
+		for _, child := range node.Children {
+			if limit > 0 && len(*items) >= limit {
+				return
+			}
+			if child.URLString != "" {
+				title := ""
+				if child.URIDictionary != nil {
+					title = child.URIDictionary["title"]
+				}
+				if title == "" {
+					title = child.Title
+				}
+				item := ReadingListItem{
+					Title: title,
+					URL:   child.URLString,
+				}
+				if child.ReadingList != nil {
+					if preview, ok := child.ReadingList["PreviewText"].(string); ok {
+						item.Preview = preview
+					}
+					if dateAdded, ok := child.ReadingList["DateAdded"].(string); ok {
+						item.DateAdded = dateAdded
+					}
+				}
+				*items = append(*items, item)
+			}
+		}
+		return
+	}
+
+	for i := range node.Children {
+		collectReadingList(&node.Children[i], items, limit)
+	}
 }
 
 // newReadingListCmd lists Reading List items
@@ -595,9 +682,8 @@ func newReadingListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "reading-list",
 		Short: "List Safari Reading List items",
+		Long:  "List Safari Reading List items from Bookmarks.plist. Requires Full Disk Access for your terminal.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Reading List items are stored in the Bookmarks.plist file
-			// We'll read it directly since AppleScript access is limited
 			homeDir, err := os.UserHomeDir()
 			if err != nil {
 				return output.PrintError("home_dir_failed", "Failed to get home directory", nil)
@@ -605,119 +691,28 @@ func newReadingListCmd() *cobra.Command {
 
 			bookmarksPlist := filepath.Join(homeDir, "Library", "Safari", "Bookmarks.plist")
 
-			// Use plutil to convert plist to JSON for easier parsing
-			cmd2 := exec.Command("plutil", "-convert", "json", "-o", "-", bookmarksPlist)
+			// Convert plist to JSON for parsing
+			plistCmd := exec.Command("plutil", "-convert", "json", "-o", "-", bookmarksPlist)
 			var stdout, stderr bytes.Buffer
-			cmd2.Stdout = &stdout
-			cmd2.Stderr = &stderr
+			plistCmd.Stdout = &stdout
+			plistCmd.Stderr = &stderr
 
-			if err := cmd2.Run(); err != nil {
-				// Try alternative method using defaults command
-				script := `
-tell application "Safari"
-	set readingList to {}
-	try
-		set rlFolder to bookmark folder "com.apple.ReadingList"
-		repeat with b in bookmark items of rlFolder
-			try
-				set bName to name of b
-				set bURL to URL of b
-				if bURL is not missing value then
-					set end of readingList to bName & "|||" & bURL
-				end if
-			end try
-		end repeat
-	end try
-	set AppleScript's text item delimiters to ":::"
-	return readingList as text
-end tell`
-
-				result, err := runAppleScript(script)
-				if err != nil {
-					return output.PrintError("reading_list_failed",
-						"Failed to access Reading List",
-						map[string]string{"error": err.Error()})
-				}
-
-				if result == "" {
-					return output.Print(map[string]any{
-						"items": []ReadingListItem{},
-						"count": 0,
-					})
-				}
-
-				var items []ReadingListItem
-				itemStrs := strings.Split(result, ":::")
-				count := 0
-				for _, item := range itemStrs {
-					if limit > 0 && count >= limit {
-						break
-					}
-					parts := strings.Split(item, "|||")
-					if len(parts) >= 2 {
-						items = append(items, ReadingListItem{
-							Title: strings.TrimSpace(parts[0]),
-							URL:   strings.TrimSpace(parts[1]),
+			if err := plistCmd.Run(); err != nil {
+				errMsg := stderr.String()
+				if strings.Contains(errMsg, "permission") || strings.Contains(errMsg, "couldn't be opened") {
+					return output.PrintError("permission_denied",
+						"Full Disk Access required to read Safari Reading List",
+						map[string]string{
+							"path":       bookmarksPlist,
+							"suggestion": "Go to System Settings > Privacy & Security > Full Disk Access and add your terminal",
 						})
-						count++
-					}
 				}
-
-				return output.Print(map[string]any{
-					"items": items,
-					"count": len(items),
-				})
+				return output.PrintError("reading_list_failed",
+					"Failed to read bookmarks plist",
+					map[string]string{"error": errMsg})
 			}
 
-			// Parse JSON output to find Reading List items
-			// For simplicity, we'll use the AppleScript approach as primary
-			script := `
-tell application "Safari"
-	set readingList to {}
-	try
-		set rlFolder to bookmark folder "com.apple.ReadingList"
-		repeat with b in bookmark items of rlFolder
-			try
-				set bName to name of b
-				set bURL to URL of b
-				if bURL is not missing value then
-					set end of readingList to bName & "|||" & bURL
-				end if
-			end try
-		end repeat
-	end try
-	set AppleScript's text item delimiters to ":::"
-	return readingList as text
-end tell`
-
-			result, err := runAppleScript(script)
-			if err != nil {
-				return output.PrintError("reading_list_failed", err.Error(), nil)
-			}
-
-			if result == "" {
-				return output.Print(map[string]any{
-					"items": []ReadingListItem{},
-					"count": 0,
-				})
-			}
-
-			var items []ReadingListItem
-			itemStrs := strings.Split(result, ":::")
-			count := 0
-			for _, item := range itemStrs {
-				if limit > 0 && count >= limit {
-					break
-				}
-				parts := strings.Split(item, "|||")
-				if len(parts) >= 2 {
-					items = append(items, ReadingListItem{
-						Title: strings.TrimSpace(parts[0]),
-						URL:   strings.TrimSpace(parts[1]),
-					})
-					count++
-				}
-			}
+			items := parseReadingListJSON(stdout.Bytes(), limit)
 
 			return output.Print(map[string]any{
 				"items": items,
@@ -849,11 +844,12 @@ func newHistoryCmd() *cobra.Command {
 			tmpFile.Close()
 			cpCmd := exec.Command("cp", historyDB, tmpDB)
 			if err := cpCmd.Run(); err != nil {
-				return output.PrintError("copy_failed",
-					"Failed to copy history database",
+				os.Remove(tmpDB)
+				return output.PrintError("permission_denied",
+					"Full Disk Access required to read Safari history",
 					map[string]string{
-						"error":      err.Error(),
-						"suggestion": "Safari may be preventing access. Try closing Safari first.",
+						"path":       historyDB,
+						"suggestion": "Go to System Settings > Privacy & Security > Full Disk Access and add your terminal",
 					})
 			}
 			defer os.Remove(tmpDB)
