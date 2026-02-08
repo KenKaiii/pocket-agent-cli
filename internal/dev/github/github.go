@@ -15,7 +15,7 @@ import (
 
 const baseURL = "https://api.github.com"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Repo is LLM-friendly repo output
 type Repo struct {

@@ -13,7 +13,7 @@ import (
 	"github.com/unstablemind/pocket/pkg/output"
 )
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // QueryResult is LLM-friendly output for an instant query
 type QueryResult struct {

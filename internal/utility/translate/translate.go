@@ -18,7 +18,7 @@ import (
 
 const baseURL = "https://api.mymemory.translated.net"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Translation is LLM-friendly translation output
 type Translation struct {

@@ -15,7 +15,7 @@ import (
 
 const baseURL = "https://api.dictionaryapi.dev/api/v2/entries/en"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Definition is LLM-friendly definition output
 type Definition struct {

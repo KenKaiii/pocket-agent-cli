@@ -15,7 +15,7 @@ import (
 
 const baseURL = "https://date.nager.at/api/v3"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Holiday is LLM-friendly holiday output
 type Holiday struct {

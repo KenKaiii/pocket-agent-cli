@@ -15,7 +15,7 @@ import (
 
 const baseURL = "https://api.coingecko.com/api/v3"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Price is LLM-friendly price output
 type Price struct {

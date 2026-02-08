@@ -22,7 +22,7 @@ const (
 	tokenURL   = "https://accounts.spotify.com/api/token"
 )
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Token cache
 var (

@@ -15,7 +15,7 @@ import (
 
 const baseURL = "https://api.frankfurter.app"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // ExchangeRate is LLM-friendly exchange rate output
 type ExchangeRate struct {

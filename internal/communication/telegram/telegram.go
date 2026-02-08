@@ -16,7 +16,7 @@ import (
 
 const baseURL = "https://api.telegram.org/bot"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // BotInfo is LLM-friendly bot information
 type BotInfo struct {

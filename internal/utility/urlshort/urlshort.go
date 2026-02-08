@@ -20,6 +20,7 @@ var httpClient = &http.Client{
 		// Don't follow redirects automatically for expand command
 		return http.ErrUseLastResponse
 	},
+	Timeout: 30 * time.Second,
 }
 
 // ShortenResult is LLM-friendly shortened URL output

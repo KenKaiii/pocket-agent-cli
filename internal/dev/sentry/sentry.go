@@ -15,7 +15,7 @@ import (
 
 const baseURL = "https://sentry.io/api/0"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Project is LLM-friendly Sentry project output
 type Project struct {

@@ -16,7 +16,7 @@ import (
 
 const baseURL = "https://www.googleapis.com/drive/v3"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // DriveSearchResult holds search results
 type DriveSearchResult struct {

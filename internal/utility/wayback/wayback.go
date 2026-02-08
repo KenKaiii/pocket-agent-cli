@@ -17,7 +17,7 @@ const (
 	cdxAPI          = "http://web.archive.org/cdx/search/cdx"
 )
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Snapshot is an LLM-friendly archived snapshot
 type Snapshot struct {

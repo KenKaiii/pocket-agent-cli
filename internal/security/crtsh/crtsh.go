@@ -15,7 +15,7 @@ import (
 
 const baseURL = "https://crt.sh"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // CertEntry represents a certificate transparency log entry
 type CertEntry struct {

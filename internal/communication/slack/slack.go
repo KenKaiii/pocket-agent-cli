@@ -16,7 +16,7 @@ import (
 
 const baseURL = "https://slack.com/api"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Channel is LLM-friendly channel output
 type Channel struct {

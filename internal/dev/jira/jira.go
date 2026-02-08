@@ -16,7 +16,7 @@ import (
 	"github.com/unstablemind/pocket/pkg/output"
 )
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Issue is LLM-friendly issue output
 type Issue struct {

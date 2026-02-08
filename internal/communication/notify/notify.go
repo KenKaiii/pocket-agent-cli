@@ -14,7 +14,7 @@ import (
 	"github.com/unstablemind/pocket/pkg/output"
 )
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // NtfyResponse represents the response from ntfy.sh
 type NtfyResponse struct {

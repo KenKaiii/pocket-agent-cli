@@ -15,7 +15,7 @@ import (
 
 const baseURL = "https://pypi.org"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Package is LLM-friendly package info
 type Package struct {

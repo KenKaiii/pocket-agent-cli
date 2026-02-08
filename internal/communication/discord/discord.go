@@ -17,7 +17,7 @@ import (
 
 const baseURL = "https://discord.com/api/v10"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Guild is LLM-friendly guild output
 type Guild struct {

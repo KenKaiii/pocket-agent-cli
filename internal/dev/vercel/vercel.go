@@ -14,7 +14,7 @@ import (
 
 const baseURL = "https://api.vercel.com"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Project is LLM-friendly project output
 type Project struct {

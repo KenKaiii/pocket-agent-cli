@@ -17,7 +17,7 @@ import (
 
 const baseURL = "https://www.googleapis.com/youtube/v3"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Video is LLM-friendly video output
 type Video struct {

@@ -16,7 +16,7 @@ import (
 
 const baseURL = "https://api.cloudflare.com/client/v4"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Zone is LLM-friendly zone output
 type Zone struct {

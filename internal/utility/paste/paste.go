@@ -18,6 +18,7 @@ var httpClient = &http.Client{
 	CheckRedirect: func(req *http.Request, via []*http.Request) error {
 		return http.ErrUseLastResponse
 	},
+	Timeout: 30 * time.Second,
 }
 
 const apiURL = "https://dpaste.com/api/"

@@ -16,7 +16,7 @@ import (
 	"github.com/unstablemind/pocket/pkg/output"
 )
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 const baseURL = "https://api.github.com"
 

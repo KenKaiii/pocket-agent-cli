@@ -16,7 +16,7 @@ import (
 
 const baseURL = "https://www.alphavantage.co/query"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Quote is LLM-friendly stock quote output
 type Quote struct {

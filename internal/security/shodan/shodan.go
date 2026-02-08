@@ -15,7 +15,7 @@ import (
 
 const baseURL = "https://internetdb.shodan.io"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // ShodanResult represents the InternetDB lookup result for an IP
 type ShodanResult struct {

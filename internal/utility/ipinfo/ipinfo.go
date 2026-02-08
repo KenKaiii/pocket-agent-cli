@@ -14,7 +14,7 @@ import (
 
 const baseURL = "https://ipinfo.io"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // IPInfo is LLM-friendly IP information
 type IPInfo struct {

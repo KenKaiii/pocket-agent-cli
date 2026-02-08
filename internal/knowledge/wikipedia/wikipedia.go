@@ -15,7 +15,7 @@ import (
 
 const baseURL = "https://en.wikipedia.org/w/api.php"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // Article is LLM-friendly article output
 type Article struct {

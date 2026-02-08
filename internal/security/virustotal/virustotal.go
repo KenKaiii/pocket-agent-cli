@@ -17,7 +17,7 @@ import (
 
 const baseURL = "https://www.virustotal.com/api/v3"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // URLScanResult represents the result of a URL scan
 type URLScanResult struct {

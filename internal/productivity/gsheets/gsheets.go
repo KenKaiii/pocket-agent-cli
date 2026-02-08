@@ -17,7 +17,7 @@ import (
 
 const baseURL = "https://sheets.googleapis.com/v4/spreadsheets"
 
-var httpClient = &http.Client{}
+var httpClient = &http.Client{Timeout: 30 * time.Second}
 
 // SpreadsheetInfo holds metadata about a spreadsheet
 type SpreadsheetInfo struct {
