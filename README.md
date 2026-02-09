@@ -27,8 +27,14 @@ No coding required. Just install it, and your AI assistant instantly gains super
 
 One command. That's it.
 
+**macOS / Linux:**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/KenKaiii/pocket-agent-cli/main/scripts/install.sh | bash
+```
+
+**Windows (PowerShell):**
+```powershell
+irm https://raw.githubusercontent.com/KenKaiii/pocket-agent-cli/main/scripts/install.ps1 | iex
 ```
 
 Works on **macOS** (Intel & Apple Silicon), **Linux**, and **Windows**.
@@ -36,8 +42,8 @@ Works on **macOS** (Intel & Apple Silicon), **Linux**, and **Windows**.
 The installer automatically:
 - Downloads the right version for your system
 - Installs it globally
-- Configures your shell
-- Restarts your terminal
+- Configures your PATH
+- Works immediately in new terminals
 
 To update later, just run the same command again.
 
