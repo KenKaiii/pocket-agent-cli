@@ -63,7 +63,7 @@ Pocket CLI changes that. It's a universal interface that lets any AI agent inter
 - Query Wikipedia, StackOverflow, dictionaries
 - Manage Todoist tasks, Notion pages, Obsidian vaults
 - Control macOS apps: Calendar, Reminders, Notes, Contacts, Finder, Safari
-- **52 integrations** across 9 categories
+- **69 integrations** across 9 categories
 
 All with simple commands that return clean JSON — perfect for AI to understand and act on.
 
@@ -83,6 +83,10 @@ pocket dev npm info react            # npm package info
 pocket dev dockerhub search nginx    # Search Docker images
 pocket comms notify ntfy mytopic "Hello!"    # Push notification (no auth)
 pocket comms webhook slack [url] "Message"   # Slack webhook
+pocket security crtsh lookup example.com      # Certificate transparency logs
+pocket utility netdiag ping example.com      # Network diagnostics
+pocket utility timezone get "America/New_York" # Timezone info
+pocket utility paste create "code snippet"   # Create a paste
 
 # macOS only (no auth needed)
 pocket system reminders today        # Today's reminders
@@ -101,12 +105,19 @@ pocket comms telegram send 123 "Hi"  # Send Telegram message
 pocket comms twilio send +1234 "SMS" # Send SMS via Twilio
 pocket social youtube search "AI"    # Search YouTube
 pocket social twitter timeline       # Your Twitter feed
+pocket social spotify search "Lo-fi"  # Search Spotify tracks
 pocket productivity todoist tasks    # Your todo list
 pocket productivity trello boards    # Your Trello boards
 pocket productivity obsidian notes   # List Obsidian notes
 pocket productivity logseq pages     # List Logseq pages
+pocket productivity gdrive search "q" # Google Drive files
+pocket productivity gsheets read ID  # Read a Google Sheet
 pocket dev github repos              # Your GitHub repos
 pocket dev jira issues               # Your Jira issues
+pocket dev sentry issues             # Sentry error tracking
+pocket dev kube pods                 # Kubernetes pods
+pocket security virustotal url URL   # Scan URL for threats
+pocket security shodan lookup 1.2.3.4 # Shodan host lookup
 ```
 
 ---
@@ -224,21 +235,22 @@ pocket productivity logseq search "todo" # Search pages
 
 ---
 
-## 📦 All 51 integrations
+## 📦 All 69 integrations
 
 | Category | Services |
 |----------|----------|
-| **Social** (4) | Twitter, Reddit, Mastodon, YouTube |
-| **Communication** (7) | Email, Slack, Discord, Telegram, Twilio SMS, Push Notifications (ntfy/Pushover), Webhooks |
+| **Social** (5) | Twitter/X, Reddit, Mastodon, YouTube, Spotify |
+| **Communication** (7) | Email (IMAP/SMTP), Slack, Discord, Telegram, Twilio SMS, Push Notifications (ntfy/Pushover), Webhooks |
 | **News** (3) | Hacker News, RSS feeds, NewsAPI |
 | **Knowledge** (3) | Wikipedia, StackOverflow, Dictionary |
-| **Dev Tools** (9) | GitHub, GitLab, Linear, Jira, Cloudflare, Vercel, npm, PyPI, Docker Hub |
-| **Productivity** (6) | Todoist, Notion, Google Calendar, Trello, Obsidian, Logseq |
-| **Utility** (10) | Weather, Crypto, Currency, IP lookup, DNS/WHOIS/SSL, Wayback Machine, Holidays, Translation, URL Shortener, Stocks |
+| **Dev Tools** (16) | GitHub, GitLab, Gist, Linear, Jira, Sentry, Cloudflare, Vercel, npm, PyPI, Docker Hub, Redis, Prometheus, Kubernetes, Database, S3 |
+| **Productivity** (8) | Todoist, Notion, Google Calendar, Google Drive, Google Sheets, Trello, Obsidian, Logseq |
+| **Utility** (14) | Weather, Crypto, Currency, IP lookup, DNS/WHOIS/SSL, Wayback Machine, Holidays, Translation, URL Shortener, Stocks, Geocoding, Network Diagnostics, Pastebin, Timezone |
+| **Security** (4) | VirusTotal, Shodan, Certificate Transparency (crt.sh), Have I Been Pwned |
 | **System** (9) | Apple Calendar, Apple Reminders, Apple Notes, Apple Contacts, Apple Mail, Safari, Finder, Clipboard, iMessage *(macOS only)* |
 
-### 27 integrations work without any setup:
-Hacker News, RSS, Wikipedia, StackOverflow, Dictionary, Weather, Crypto, Currency, IP lookup, Domain tools, Wayback Machine, Holidays, Translation, URL Shortener, npm, PyPI, Docker Hub, ntfy notifications, Webhooks, plus all 8 macOS System integrations
+### 33 integrations work without any setup:
+Hacker News, RSS, Wikipedia, StackOverflow, Dictionary, Weather, Crypto, Currency, IP lookup, Domain tools, Wayback Machine, Holidays, Translation, URL Shortener, npm, PyPI, Docker Hub, Prometheus, Network Diagnostics, Pastebin, Timezone, Certificate Transparency, ntfy notifications, Webhooks, plus all 9 macOS System integrations
 
 ---
 
