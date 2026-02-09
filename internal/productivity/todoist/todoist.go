@@ -14,7 +14,7 @@ import (
 	"github.com/unstablemind/pocket/pkg/output"
 )
 
-const apiBaseURL = "https://api.todoist.com/rest/v2"
+const apiBaseURL = "https://api.todoist.com/api/v1"
 
 func NewCmd() *cobra.Command {
 	cmd := &cobra.Command{
@@ -104,7 +104,7 @@ type task struct {
 		Recurring bool   `json:"is_recurring"`
 	} `json:"due,omitempty"`
 	Labels    []string `json:"labels"`
-	CreatedAt string   `json:"created_at"`
+	CreatedAt string   `json:"added_at"`
 	URL       string   `json:"url"`
 }
 
@@ -143,26 +143,31 @@ func newTasksCmd() *cobra.Command {
 				return err
 			}
 
-			endpoint := "/tasks"
-			if projectID != "" {
-				endpoint += "?project_id=" + projectID
-			} else if filter != "" {
-				endpoint += "?filter=" + filter
+			var body []byte
+			if filter != "" {
+				// Filters use a separate endpoint in API v1
+				body, err = client.doRequest("GET", "/tasks/filter?query="+filter, nil)
+			} else {
+				endpoint := "/tasks"
+				if projectID != "" {
+					endpoint += "?project_id=" + projectID
+				}
+				body, err = client.doRequest("GET", endpoint, nil)
 			}
-
-			body, err := client.doRequest("GET", endpoint, nil)
 			if err != nil {
 				return output.PrintError("request_failed", err.Error(), nil)
 			}
 
-			var tasks []task
-			if err := json.Unmarshal(body, &tasks); err != nil {
+			var resp struct {
+				Results []task `json:"results"`
+			}
+			if err := json.Unmarshal(body, &resp); err != nil {
 				return output.PrintError("parse_error", err.Error(), nil)
 			}
 
 			return output.Print(map[string]any{
-				"count": len(tasks),
-				"tasks": formatTasks(tasks),
+				"count": len(resp.Results),
+				"tasks": formatTasks(resp.Results),
 			})
 		},
 	}
@@ -188,39 +193,39 @@ func newProjectsCmd() *cobra.Command {
 				return output.PrintError("request_failed", err.Error(), nil)
 			}
 
-			var projects []struct {
-				ID             string `json:"id"`
-				Name           string `json:"name"`
-				Color          string `json:"color"`
-				ParentID       string `json:"parent_id,omitempty"`
-				Order          int    `json:"order"`
-				CommentCount   int    `json:"comment_count"`
-				IsFavorite     bool   `json:"is_favorite"`
-				IsInboxProject bool   `json:"is_inbox_project"`
-				URL            string `json:"url"`
+			var resp struct {
+				Results []struct {
+					ID           string `json:"id"`
+					Name         string `json:"name"`
+					Color        string `json:"color"`
+					ParentID     string `json:"parent_id,omitempty"`
+					ChildOrder   int    `json:"child_order"`
+					IsFavorite   bool   `json:"is_favorite"`
+					InboxProject bool   `json:"inbox_project"`
+					URL          string `json:"url"`
+				} `json:"results"`
 			}
 
-			if err := json.Unmarshal(body, &projects); err != nil {
+			if err := json.Unmarshal(body, &resp); err != nil {
 				return output.PrintError("parse_error", err.Error(), nil)
 			}
 
-			result := make([]map[string]any, len(projects))
-			for i, p := range projects {
+			result := make([]map[string]any, len(resp.Results))
+			for i, p := range resp.Results {
 				result[i] = map[string]any{
 					"id":        p.ID,
 					"name":      p.Name,
 					"color":     p.Color,
 					"parent_id": p.ParentID,
-					"order":     p.Order,
-					"comments":  p.CommentCount,
+					"order":     p.ChildOrder,
 					"favorite":  p.IsFavorite,
-					"is_inbox":  p.IsInboxProject,
+					"is_inbox":  p.InboxProject,
 					"url":       p.URL,
 				}
 			}
 
 			return output.Print(map[string]any{
-				"count":    len(projects),
+				"count":    len(resp.Results),
 				"projects": result,
 			})
 		},

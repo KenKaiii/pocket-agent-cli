@@ -6,8 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
+	"os/exec"
 	"strings"
 	"time"
 
@@ -17,26 +19,24 @@ import (
 )
 
 const (
-	tokenURL   = "https://www.reddit.com/api/v1/access_token"
-	apiBaseURL = "https://oauth.reddit.com"
-	userAgent  = "pocket-cli/1.0"
+	authURL      = "https://www.reddit.com/api/v1/authorize"
+	tokenURL     = "https://www.reddit.com/api/v1/access_token"
+	apiBaseURL   = "https://oauth.reddit.com"
+	userAgent    = "pocket-cli/1.0"
+	callbackPort = "8766"
+	redirectURI  = "http://localhost:" + callbackPort + "/callback"
+	scopes       = "identity read mysubreddits history"
 )
-
-var cachedToken *accessToken
-
-type accessToken struct {
-	Token     string
-	ExpiresAt time.Time
-}
 
 func NewCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:     "reddit",
 		Aliases: []string{"rd"},
 		Short:   "Reddit commands",
-		Long:    "Reddit API integration. Free tier for non-commercial use (100 req/min).",
+		Long:    "Reddit API integration using OAuth 2.0. Free tier for non-commercial use (100 req/min).",
 	}
 
+	cmd.AddCommand(newAuthCmd())
 	cmd.AddCommand(newFeedCmd())
 	cmd.AddCommand(newSubredditCmd())
 	cmd.AddCommand(newPostCmd())
@@ -48,11 +48,9 @@ func NewCmd() *cobra.Command {
 }
 
 type redditClient struct {
-	clientID     string
-	clientSecret string
-	username     string
-	password     string
-	httpClient   *http.Client
+	clientID   string
+	token      string
+	httpClient *http.Client
 }
 
 func newRedditClient() (*redditClient, error) {
@@ -60,55 +58,61 @@ func newRedditClient() (*redditClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	clientSecret, err := config.MustGet("reddit_client_secret")
-	if err != nil {
-		return nil, err
-	}
-	username, err := config.MustGet("reddit_username")
-	if err != nil {
-		return nil, err
-	}
-	password, err := config.MustGet("reddit_password")
-	if err != nil {
-		return nil, err
+
+	accessToken, _ := config.Get("reddit_access_token")
+	refreshToken, _ := config.Get("reddit_refresh_token")
+	expiryStr, _ := config.Get("reddit_token_expiry")
+
+	// Check if token exists and is valid
+	if accessToken != "" && expiryStr != "" {
+		expiry, _ := time.Parse(time.RFC3339, expiryStr)
+		if time.Now().Before(expiry) {
+			return &redditClient{
+				clientID:   clientID,
+				token:      accessToken,
+				httpClient: &http.Client{Timeout: 30 * time.Second},
+			}, nil
+		}
 	}
 
-	return &redditClient{
-		clientID:     clientID,
-		clientSecret: clientSecret,
-		username:     username,
-		password:     password,
-		httpClient:   &http.Client{Timeout: 30 * time.Second},
-	}, nil
+	// Token expired or missing — try refresh
+	if refreshToken != "" {
+		newToken, err := refreshAccessToken(clientID, refreshToken)
+		if err == nil {
+			return &redditClient{
+				clientID:   clientID,
+				token:      newToken,
+				httpClient: &http.Client{Timeout: 30 * time.Second},
+			}, nil
+		}
+	}
+
+	return nil, output.PrintError("auth_required",
+		"Reddit OAuth not configured or expired. Run: pocket social reddit auth",
+		nil)
 }
 
-func (c *redditClient) getAccessToken() (string, error) {
-	// Check if we have a valid cached token
-	if cachedToken != nil && time.Now().Before(cachedToken.ExpiresAt) {
-		return cachedToken.Token, nil
+func refreshAccessToken(clientID, refreshToken string) (string, error) {
+	data := url.Values{
+		"grant_type":    {"refresh_token"},
+		"refresh_token": {refreshToken},
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-
-	// Request new token using password grant
-	data := url.Values{}
-	data.Set("grant_type", "password")
-	data.Set("username", c.username)
-	data.Set("password", c.password)
 
 	req, err := http.NewRequestWithContext(ctx, "POST", tokenURL, strings.NewReader(data.Encode()))
 	if err != nil {
 		return "", err
 	}
 
-	// Basic auth with client credentials
-	auth := base64.StdEncoding.EncodeToString([]byte(c.clientID + ":" + c.clientSecret))
+	// Installed apps use Basic auth with empty password
+	auth := base64.StdEncoding.EncodeToString([]byte(clientID + ":"))
 	req.Header.Set("Authorization", "Basic "+auth)
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("User-Agent", userAgent)
 
-	resp, err := c.httpClient.Do(req)
+	resp, err := (&http.Client{Timeout: 30 * time.Second}).Do(req)
 	if err != nil {
 		return "", err
 	}
@@ -120,7 +124,7 @@ func (c *redditClient) getAccessToken() (string, error) {
 	}
 
 	if resp.StatusCode != 200 {
-		return "", fmt.Errorf("failed to get access token: %s", string(body))
+		return "", fmt.Errorf("token refresh failed (HTTP %d): %s", resp.StatusCode, string(body))
 	}
 
 	var tokenResp struct {
@@ -136,21 +140,15 @@ func (c *redditClient) getAccessToken() (string, error) {
 		return "", fmt.Errorf("auth error: %s", tokenResp.Error)
 	}
 
-	// Cache the token
-	cachedToken = &accessToken{
-		Token:     tokenResp.AccessToken,
-		ExpiresAt: time.Now().Add(time.Duration(tokenResp.ExpiresIn-60) * time.Second),
-	}
+	// Store new access token (Reddit refresh tokens don't rotate)
+	expiry := time.Now().Add(time.Duration(tokenResp.ExpiresIn-60) * time.Second)
+	config.Set("reddit_access_token", tokenResp.AccessToken)
+	config.Set("reddit_token_expiry", expiry.Format(time.RFC3339))
 
-	return cachedToken.Token, nil
+	return tokenResp.AccessToken, nil
 }
 
 func (c *redditClient) doRequest(method, endpoint string) ([]byte, error) {
-	token, err := c.getAccessToken()
-	if err != nil {
-		return nil, err
-	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -160,7 +158,7 @@ func (c *redditClient) doRequest(method, endpoint string) ([]byte, error) {
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Authorization", "Bearer "+c.token)
 	req.Header.Set("User-Agent", userAgent)
 
 	resp, err := c.httpClient.Do(req)
@@ -179,6 +177,162 @@ func (c *redditClient) doRequest(method, endpoint string) ([]byte, error) {
 	}
 
 	return body, nil
+}
+
+// generateState is unused but retained for potential future use outside auth command.
+// The auth command generates state inline.
+
+func newAuthCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "auth",
+		Short: "Authenticate with Reddit using OAuth 2.0",
+		Long:  "Opens your browser to authorize Pocket CLI with your Reddit account.\nRequires reddit_client_id to be configured first.",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			clientID, err := config.MustGet("reddit_client_id")
+			if err != nil {
+				return output.PrintError("setup_required",
+					"reddit_client_id not configured. Set it first: pocket config set reddit_client_id <your-client-id>",
+					map[string]string{
+						"setup": "1. Go to https://www.reddit.com/prefs/apps\n2. Click 'create another app'\n3. Select 'installed app' type\n4. Set redirect URI to " + redirectURI + "\n5. Copy the client ID (shown under app name)",
+					})
+			}
+
+			state := fmt.Sprintf("%d", time.Now().UnixNano())
+
+			// Build authorization URL
+			params := url.Values{
+				"client_id":     {clientID},
+				"response_type": {"code"},
+				"state":         {state},
+				"redirect_uri":  {redirectURI},
+				"duration":      {"permanent"},
+				"scope":         {scopes},
+			}
+			authorizationURL := authURL + "?" + params.Encode()
+
+			// Start local callback server
+			listener, err := net.Listen("tcp", "localhost:"+callbackPort)
+			if err != nil {
+				return output.PrintError("auth_error",
+					fmt.Sprintf("Failed to start callback server on port %s: %s", callbackPort, err.Error()), nil)
+			}
+
+			codeCh := make(chan string, 1)
+			errCh := make(chan string, 1)
+
+			mux := http.NewServeMux()
+			mux.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Query().Get("state") != state {
+					errCh <- "state mismatch"
+					fmt.Fprintf(w, "Error: state mismatch. Please try again.")
+					return
+				}
+				if errMsg := r.URL.Query().Get("error"); errMsg != "" {
+					errCh <- errMsg
+					fmt.Fprintf(w, "Authorization denied: %s", errMsg)
+					return
+				}
+				code := r.URL.Query().Get("code")
+				if code == "" {
+					errCh <- "no code in callback"
+					fmt.Fprintf(w, "Error: no authorization code received.")
+					return
+				}
+				codeCh <- code
+				fmt.Fprintf(w, "Authorization successful! You can close this tab and return to the terminal.")
+			})
+
+			server := &http.Server{Handler: mux}
+			go server.Serve(listener)
+
+			// Open browser
+			fmt.Println("Opening browser for Reddit authorization...")
+			fmt.Println("If the browser doesn't open, visit this URL:")
+			fmt.Println(authorizationURL)
+			exec.Command("open", authorizationURL).Start()
+
+			// Wait for callback
+			fmt.Println("\nWaiting for authorization...")
+			var code string
+			select {
+			case code = <-codeCh:
+				// Success
+			case errMsg := <-errCh:
+				server.Close()
+				return output.PrintError("auth_denied", "Authorization failed: "+errMsg, nil)
+			case <-time.After(5 * time.Minute):
+				server.Close()
+				return output.PrintError("auth_timeout", "Authorization timed out after 5 minutes", nil)
+			}
+			server.Close()
+
+			// Exchange code for tokens
+			tokenData := url.Values{
+				"grant_type":   {"authorization_code"},
+				"code":         {code},
+				"redirect_uri": {redirectURI},
+			}
+
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+
+			req, err := http.NewRequestWithContext(ctx, "POST", tokenURL, strings.NewReader(tokenData.Encode()))
+			if err != nil {
+				return output.PrintError("auth_error", "Failed to create token request: "+err.Error(), nil)
+			}
+
+			// Installed apps: Basic auth with empty password
+			authHeader := base64.StdEncoding.EncodeToString([]byte(clientID + ":"))
+			req.Header.Set("Authorization", "Basic "+authHeader)
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			req.Header.Set("User-Agent", userAgent)
+
+			resp, err := (&http.Client{Timeout: 30 * time.Second}).Do(req)
+			if err != nil {
+				return output.PrintError("auth_error", "Token exchange failed: "+err.Error(), nil)
+			}
+			defer resp.Body.Close()
+
+			respBody, err := io.ReadAll(resp.Body)
+			if err != nil {
+				return output.PrintError("auth_error", "Failed to read token response: "+err.Error(), nil)
+			}
+
+			if resp.StatusCode != 200 {
+				return output.PrintError("auth_error",
+					fmt.Sprintf("Token exchange failed (HTTP %d): %s", resp.StatusCode, string(respBody)), nil)
+			}
+
+			var tokenResp struct {
+				AccessToken  string `json:"access_token"`
+				RefreshToken string `json:"refresh_token"`
+				ExpiresIn    int    `json:"expires_in"`
+				Scope        string `json:"scope"`
+				Error        string `json:"error"`
+			}
+			if err := json.Unmarshal(respBody, &tokenResp); err != nil {
+				return output.PrintError("auth_error", "Failed to parse token response: "+err.Error(), nil)
+			}
+
+			if tokenResp.Error != "" {
+				return output.PrintError("auth_error", "Reddit auth error: "+tokenResp.Error, nil)
+			}
+
+			// Store tokens
+			expiry := time.Now().Add(time.Duration(tokenResp.ExpiresIn-60) * time.Second)
+			config.Set("reddit_access_token", tokenResp.AccessToken)
+			config.Set("reddit_refresh_token", tokenResp.RefreshToken)
+			config.Set("reddit_token_expiry", expiry.Format(time.RFC3339))
+
+			return output.Print(map[string]any{
+				"status": "authenticated",
+				"scopes": tokenResp.Scope,
+				"expiry": expiry.Format(time.RFC3339),
+			})
+		},
+	}
+
+	return cmd
 }
 
 type redditPost struct {
@@ -519,10 +673,8 @@ func newPostCmd() *cobra.Command {
 		Short: "Create a text post",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// Note: Posting requires additional OAuth scopes and is more complex
-			// For now, return an error explaining the limitation
 			return output.PrintError("not_implemented",
-				"Posting to Reddit requires additional OAuth scopes. Use Reddit's website or official app to create posts.",
+				"Posting to Reddit requires the 'submit' OAuth scope. Re-run 'pocket social reddit auth' with submit scope enabled, then use Reddit's API.",
 				map[string]string{
 					"docs": "https://www.reddit.com/dev/api#POST_api_submit",
 				})
@@ -532,8 +684,8 @@ func newPostCmd() *cobra.Command {
 	cmd.Flags().StringVarP(&subreddit, "subreddit", "r", "", "Subreddit to post to (required)")
 	cmd.Flags().StringVarP(&title, "title", "t", "", "Post title (required)")
 	cmd.Flags().StringVarP(&flair, "flair", "f", "", "Post flair ID")
-	cmd.MarkFlagRequired("subreddit")
-	cmd.MarkFlagRequired("title")
+	_ = cmd.MarkFlagRequired("subreddit")
+	_ = cmd.MarkFlagRequired("title")
 
 	return cmd
 }

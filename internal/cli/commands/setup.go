@@ -66,24 +66,18 @@ var services = map[string]ServiceInfo{
 		Service: "twitter",
 		Name:    "Twitter/X",
 		Keys: []KeyInfo{
-			{Key: "x_api_key", Description: "API Key (Consumer Key)", Required: true},
-			{Key: "x_api_secret", Description: "API Key Secret (Consumer Secret)", Required: true},
-			{Key: "x_access_token", Description: "Access Token", Required: true},
-			{Key: "x_access_secret", Description: "Access Token Secret", Required: true},
+			{Key: "x_client_id", Description: "OAuth 2.0 Client ID", Required: true},
 		},
-		SetupGuide:  "1. Go to https://developer.x.com/en/portal/dashboard\n2. Create a project and app (Free tier works)\n3. In 'Keys and Tokens', generate:\n   - API Key and Secret (Consumer Keys)\n   - Access Token and Secret\n4. Run:\n   pocket config set x_api_key <api-key>\n   pocket config set x_api_secret <api-secret>\n   pocket config set x_access_token <access-token>\n   pocket config set x_access_secret <access-secret>\n\nNote: Free tier allows posting 1,500 tweets/month. Reading requires paid tier ($200/mo).",
+		SetupGuide:  "1. Go to https://developer.x.com/en/portal/dashboard\n2. Create a project and app (Free tier works)\n3. Enable OAuth 2.0, select 'Native App' type\n4. Set callback URL to http://127.0.0.1:8765/callback\n5. Copy the Client ID\n6. Run: pocket config set x_client_id <client-id>\n7. Run: pocket social twitter auth\n\nNote: Free tier allows posting tweets. Reading requires paid tier ($200/mo).",
 		TestCommand: "pocket social twitter me",
 	},
 	"reddit": {
 		Service: "reddit",
 		Name:    "Reddit",
 		Keys: []KeyInfo{
-			{Key: "reddit_client_id", Description: "OAuth Client ID", Required: true},
-			{Key: "reddit_client_secret", Description: "OAuth Client Secret", Required: true},
-			{Key: "reddit_username", Description: "Your Reddit username", Required: true},
-			{Key: "reddit_password", Description: "Your Reddit password", Required: true},
+			{Key: "reddit_client_id", Description: "OAuth Client ID (installed app)", Required: true},
 		},
-		SetupGuide:  "1. Go to https://www.reddit.com/prefs/apps\n2. Click 'create another app' at the bottom\n3. Select 'script' type, name it, set redirect to http://localhost\n4. Copy the client ID (under app name) and secret\n5. Run:\n   pocket config set reddit_client_id <id>\n   pocket config set reddit_client_secret <secret>\n   pocket config set reddit_username <your-username>\n   pocket config set reddit_password <your-password>\n\nNote: Free tier allows 100 req/min for non-commercial use.",
+		SetupGuide:  "1. Go to https://www.reddit.com/prefs/apps\n2. Click 'create another app' at the bottom\n3. Select 'installed app' type, name it\n4. Set redirect URI to http://localhost:8766/callback\n5. Copy the client ID (shown under app name)\n6. Run: pocket config set reddit_client_id <id>\n7. Run: pocket social reddit auth\n\nNote: Free tier allows 100 req/min for non-commercial use.",
 		TestCommand: "pocket social reddit feed -l 1",
 	},
 	"slack": {
@@ -196,7 +190,7 @@ For Yahoo:
 		Service: "notion",
 		Name:    "Notion",
 		Keys: []KeyInfo{
-			{Key: "notion_token", Description: "Internal integration token", Required: true, Example: "secret_xxxx"},
+			{Key: "notion_token", Description: "Internal integration token", Required: true, Example: "ntn_xxxx"},
 		},
 		SetupGuide:  "1. Go to https://www.notion.so/my-integrations\n2. Create new integration\n3. Copy the Internal Integration Token\n4. Share your pages/databases with the integration\n5. Run: pocket config set notion_token <token>",
 		TestCommand: "pocket productivity notion search test",

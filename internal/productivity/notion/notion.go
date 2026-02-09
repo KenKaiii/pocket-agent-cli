@@ -67,7 +67,7 @@ func (c *notionClient) doRequest(method, endpoint string, body interface{}) ([]b
 	}
 
 	req.Header.Set("Authorization", "Bearer "+c.token)
-	req.Header.Set("Notion-Version", "2022-06-28")
+	req.Header.Set("Notion-Version", "2022-06-28") // Pinned: 2025-09-03 has breaking database changes
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}

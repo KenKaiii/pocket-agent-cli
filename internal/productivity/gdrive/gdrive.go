@@ -84,7 +84,7 @@ func newSearchCmd() *cobra.Command {
 		Long:  `Search public files using Google Drive query syntax: name contains 'test', mimeType='application/pdf', etc.`,
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			apiKey, err := getAPIKey()
+			key, err := getAPIKey()
 			if err != nil {
 				return err
 			}
@@ -92,13 +92,12 @@ func newSearchCmd() *cobra.Command {
 			query := args[0]
 			params := url.Values{
 				"q":        {query},
-				"key":      {apiKey},
 				"fields":   {"files(id,name,mimeType,size,createdTime,modifiedTime,webViewLink)"},
 				"pageSize": {fmt.Sprintf("%d", limit)},
 			}
 
 			reqURL := fmt.Sprintf("%s/files?%s", baseURL, params.Encode())
-			data, err := doRequest(reqURL)
+			data, err := doRequest(reqURL, key)
 			if err != nil {
 				return err
 			}
@@ -153,19 +152,18 @@ func newInfoCmd() *cobra.Command {
 		Short: "Get file metadata",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			apiKey, err := getAPIKey()
+			key, err := getAPIKey()
 			if err != nil {
 				return err
 			}
 
 			fileID := args[0]
 			params := url.Values{
-				"key":    {apiKey},
 				"fields": {"id,name,mimeType,size,createdTime,modifiedTime,webViewLink,description,owners"},
 			}
 
 			reqURL := fmt.Sprintf("%s/files/%s?%s", baseURL, url.PathEscape(fileID), params.Encode())
-			data, err := doRequest(reqURL)
+			data, err := doRequest(reqURL, key)
 			if err != nil {
 				return err
 			}
@@ -212,7 +210,7 @@ func newInfoCmd() *cobra.Command {
 	return cmd
 }
 
-func doRequest(reqURL string) ([]byte, error) {
+func doRequest(reqURL, key string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -222,6 +220,7 @@ func doRequest(reqURL string) ([]byte, error) {
 	}
 
 	req.Header.Set("User-Agent", "Pocket-CLI/1.0")
+	req.Header.Set("x-goog-api-key", key)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {

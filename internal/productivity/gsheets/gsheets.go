@@ -94,16 +94,16 @@ func newGetCmd() *cobra.Command {
 		Short: "Get spreadsheet metadata",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			apiKey, err := getAPIKey()
+			key, err := getAPIKey()
 			if err != nil {
 				return err
 			}
 
 			spreadsheetID := args[0]
-			reqURL := fmt.Sprintf("%s/%s?key=%s&fields=properties,sheets.properties",
-				baseURL, url.PathEscape(spreadsheetID), url.QueryEscape(apiKey))
+			reqURL := fmt.Sprintf("%s/%s?fields=properties,sheets.properties",
+				baseURL, url.PathEscape(spreadsheetID))
 
-			data, err := doRequest(reqURL)
+			data, err := doRequest(reqURL, key)
 			if err != nil {
 				return err
 			}
@@ -162,7 +162,7 @@ func newReadCmd() *cobra.Command {
 		Long:  `Read cell values. Range format: "Sheet1!A1:D10" or "A1:D10"`,
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			apiKey, err := getAPIKey()
+			key, err := getAPIKey()
 			if err != nil {
 				return err
 			}
@@ -170,11 +170,11 @@ func newReadCmd() *cobra.Command {
 			spreadsheetID := args[0]
 			rangeStr := args[1]
 
-			reqURL := fmt.Sprintf("%s/%s/values/%s?key=%s",
+			reqURL := fmt.Sprintf("%s/%s/values/%s",
 				baseURL, url.PathEscape(spreadsheetID),
-				url.PathEscape(rangeStr), url.QueryEscape(apiKey))
+				url.PathEscape(rangeStr))
 
-			data, err := doRequest(reqURL)
+			data, err := doRequest(reqURL, key)
 			if err != nil {
 				return err
 			}
@@ -223,7 +223,7 @@ func newSearchCmd() *cobra.Command {
 		Short: "Search for a value across all sheets",
 		Args:  cobra.ExactArgs(2),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			apiKey, err := getAPIKey()
+			key, err := getAPIKey()
 			if err != nil {
 				return err
 			}
@@ -232,10 +232,10 @@ func newSearchCmd() *cobra.Command {
 			query := args[1]
 
 			// First, get sheet list
-			metaURL := fmt.Sprintf("%s/%s?key=%s&fields=sheets.properties.title",
-				baseURL, url.PathEscape(spreadsheetID), url.QueryEscape(apiKey))
+			metaURL := fmt.Sprintf("%s/%s?fields=sheets.properties.title",
+				baseURL, url.PathEscape(spreadsheetID))
 
-			metaData, err := doRequest(metaURL)
+			metaData, err := doRequest(metaURL, key)
 			if err != nil {
 				return err
 			}
@@ -261,9 +261,7 @@ func newSearchCmd() *cobra.Command {
 			}
 
 			// Build batch read URL with ranges for all sheets
-			params := url.Values{
-				"key": {apiKey},
-			}
+			params := url.Values{}
 			for _, sheet := range metaResp.Sheets {
 				params.Add("ranges", sheet.Properties.Title+"!A:ZZ")
 			}
@@ -271,7 +269,7 @@ func newSearchCmd() *cobra.Command {
 			batchURL := fmt.Sprintf("%s/%s/values:batchGet?%s",
 				baseURL, url.PathEscape(spreadsheetID), params.Encode())
 
-			batchData, err := doRequest(batchURL)
+			batchData, err := doRequest(batchURL, key)
 			if err != nil {
 				return err
 			}
@@ -333,7 +331,7 @@ func newSearchCmd() *cobra.Command {
 	return cmd
 }
 
-func doRequest(reqURL string) ([]byte, error) {
+func doRequest(reqURL, key string) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -343,6 +341,7 @@ func doRequest(reqURL string) ([]byte, error) {
 	}
 
 	req.Header.Set("User-Agent", "Pocket-CLI/1.0")
+	req.Header.Set("x-goog-api-key", key)
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
