@@ -58,7 +58,7 @@ func newDownloadCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&format, "format", "f", "best", "yt-dlp format string")
+	cmd.Flags().StringVarP(&format, "format", "f", "", "yt-dlp format string (default: best merged)")
 
 	return cmd
 }
@@ -146,9 +146,11 @@ func runDownload(url, format string) error {
 		"-P", downloadDir,
 		"--print-json",
 		"-o", "%(title)s.%(ext)s",
-		"-f", format,
-		url,
 	}
+	if format != "" {
+		cmdArgs = append(cmdArgs, "-f", format)
+	}
+	cmdArgs = append(cmdArgs, url)
 
 	cmd := exec.Command("yt-dlp", cmdArgs...)
 
