@@ -18,6 +18,7 @@ import (
 	"github.com/unstablemind/pocket/internal/utility/traceroute"
 	"github.com/unstablemind/pocket/internal/utility/translate"
 	"github.com/unstablemind/pocket/internal/utility/urlshort"
+	"github.com/unstablemind/pocket/internal/utility/video"
 	"github.com/unstablemind/pocket/internal/utility/wayback"
 	"github.com/unstablemind/pocket/internal/utility/weather"
 	"github.com/unstablemind/pocket/internal/utility/wifi"
@@ -49,6 +50,7 @@ func NewUtilityCmd() *cobra.Command {
 	cmd.AddCommand(dnsbench.NewCmd())
 	cmd.AddCommand(traceroute.NewCmd())
 	cmd.AddCommand(wifi.NewCmd())
+	cmd.AddCommand(video.NewCmd())
 
 	return cmd
 }

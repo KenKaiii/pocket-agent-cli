@@ -254,6 +254,7 @@ func getAllCommands() []Group {
 				{Command: "pocket utility traceroute run", Desc: "Trace network path to host", Args: "[host]", Flags: "--max-hops"},
 				{Command: "pocket utility wifi scan", Desc: "Scan nearby WiFi networks"},
 				{Command: "pocket utility wifi current", Desc: "Show current WiFi connection"},
+				{Command: "pocket utility video download", Desc: "Download video from URL via yt-dlp", Args: "[url]", Flags: "-f format"},
 			},
 		},
 		{
