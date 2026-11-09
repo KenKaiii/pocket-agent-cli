@@ -12,7 +12,7 @@
   <a href="https://github.com/KenKaiii/pocket-agent-cli/releases/latest"><img src="https://img.shields.io/github/v/release/KenKaiii/pocket-agent-cli?include_prereleases&style=for-the-badge" alt="GitHub release"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge" alt="MIT License"></a>
   <a href="https://youtube.com/@kenkaidoesai"><img src="https://img.shields.io/badge/YouTube-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="YouTube"></a>
-  <a href="https://skool.com/kenkai"><img src="https://img.shields.io/badge/Skool-Community-7C3AED?style=for-the-badge" alt="Skool"></a>
+  <a href="https://www.skool.com/raid"><img src="https://img.shields.io/badge/Skool-Free%20community-7C3AED?style=for-the-badge" alt="Free Skool community"></a>
 </p>
 
 **Pocket CLI** gives your AI assistant the power to actually *do things* on the internet — check emails, browse social media, get news, look up information, and more.
@@ -20,6 +20,9 @@
 Think of it as hands for your AI. Instead of just chatting, your AI can now reach out and interact with real services like Twitter, YouTube, Hacker News, Wikipedia, and dozens more.
 
 No coding required. Just install it, and your AI assistant instantly gains superpowers to help you with real tasks across the web.
+
+> [!TIP]
+> **Want to build your own apps with AI?** A free 7-day build challenge and 20+ step-by-step projects are in my free community: **[skool.com/raid](https://www.skool.com/raid)**
 
 ---
 
@@ -317,7 +320,7 @@ Stack: Go + Cobra CLI + zero external dependencies at runtime
 ## 👥 Community
 
 - [YouTube @kenkaidoesai](https://youtube.com/@kenkaidoesai) — tutorials and demos
-- [Skool community](https://skool.com/kenkai) — come hang out
+- [Free Skool community](https://www.skool.com/raid): a 7-day build challenge and 20+ step-by-step projects
 
 ---
 
